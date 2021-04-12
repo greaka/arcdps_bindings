@@ -45,7 +45,7 @@ pub type SafeOptionsCallback = fn();
 pub type SafeOptionsWindowsCallback = fn(windowname: Option<&str>);
 
 impl arcdps_exports {
-    pub fn new(sig: usize, name: &'static str, build: &'static str) -> ArcdpsExportsBuilder {
+    pub fn new(sig: u32, imguivers: u32, name: &'static str, build: &'static str) -> ArcdpsExportsBuilder {
         let (out_name, out_build) = {
             let info =
                 INFO.get_or_init(|| (CString::new(name).unwrap(), CString::new(build).unwrap()));
@@ -56,6 +56,7 @@ impl arcdps_exports {
             arcdps: arcdps_exports {
                 size: std::mem::size_of::<arcdps_exports>(),
                 sig,
+                imguivers,
                 out_name,
                 out_build,
                 wnd_nofilter: null::<isize>() as LPVOID,
@@ -253,7 +254,8 @@ unsafe fn get_str_from_pcchar(src: PCCHAR) -> Option<&'static str> {
 #[derive(Debug, Copy, Clone)]
 pub struct arcdps_exports {
     pub size:            usize,
-    pub sig:             usize,
+    pub sig:             u32,
+    pub imguivers:       u32,
     pub out_name:        PCCHAR,
     pub out_build:       PCCHAR,
     pub wnd_nofilter:    LPVOID,
