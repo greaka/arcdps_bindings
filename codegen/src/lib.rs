@@ -210,6 +210,25 @@ fn build_extras_init(
 ) -> TokenStream {
     let has_update = squad_update.is_some();
     let squad_cb = squad_update.unwrap_or(quote! { None });
+
+    let basic_init = quote!(
+        if addon.api_version != 2 {
+            return;
+        }
+        if addon.max_info_version < 1 {
+            return;
+        }
+
+        let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
+        let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV1);
+
+        sub.info_version = 1;
+        sub.subscriber_name = #name.as_ptr();
+        sub.squad_update_callback = #squad_cb;
+        sub.language_changed_callback = None;
+        sub.key_bind_changed_callback = None;
+    );
+
     let abstract_wrapper = match (raw, safe) {
         (Some(raw), _) => {
             let span = syn::Error::new_spanned(&raw, "").span();
@@ -222,8 +241,7 @@ fn build_extras_init(
         (_, Some(safe)) => {
             let span = syn::Error::new_spanned(&safe, "").span();
             quote_spanned!(span =>
-                sub.subscriber_name = #name.as_ptr();
-                sub.squad_update_callback = #squad_cb;
+                #basic_init
 
                 let _ = #safe as ::arcdps::ExtrasInitFunc;
                 use ::arcdps::helpers::get_str_from_pc_char as pc;
@@ -233,17 +251,14 @@ fn build_extras_init(
                 #safe(user, version)
             )
         }
-        _ if has_update => quote! {
-                sub.subscriber_name = #name.as_ptr();
-                sub.squad_update_callback = #squad_cb;
-        },
+        _ if has_update => basic_init,
         _ => return quote! {},
     };
     use syn::spanned::Spanned;
     quote_spanned!(abstract_wrapper.span() =>
         #[no_mangle]
         unsafe extern "system" fn arcdps_unofficial_extras_subscriber_init(
-            addon: &::arcdps::RawExtrasAddonInfo, sub: &mut ::arcdps::RawExtrasSubscriberInfo) {
+            addon: &::arcdps::RawExtrasAddonInfo, sub: &mut ::arcdps::RawExtrasSubscriberInfoHeader) {
 
             #abstract_wrapper
         }
