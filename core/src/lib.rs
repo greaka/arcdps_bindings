@@ -51,6 +51,7 @@ pub struct SupportedFields {
     pub raw_combat_local: Option<RawCombatCallback>,
     pub raw_unofficial_extras_init: Option<RawExtrasSubscriberInitSignature>,
     pub raw_unofficial_extras_squad_update: Option<RawSquadUpdateCallbackSignature>,
+    pub raw_unofficial_extras_chat_message: Option<RawChatMessageCallbackSignature>,
     pub wnd_nofilter: Option<WndProcCallback>,
     pub combat: Option<CombatCallback>,
     pub imgui: Option<ImguiCallback>,
@@ -60,4 +61,5 @@ pub struct SupportedFields {
     pub options_windows: Option<OptionsWindowsCallback>,
     pub unofficial_extras_init: Option<ExtrasInitFunc>,
     pub unofficial_extras_squad_update: Option<ExtrasSquadUpdateCallback>,
+    pub unofficial_extras_chat_message: Option<ExtrasChatMessageCallback>,
 }

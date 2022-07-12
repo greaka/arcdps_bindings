@@ -73,10 +73,15 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         input.raw_unofficial_extras_squad_update,
         input.unofficial_extras_squad_update,
     );
+    let (abstract_extras_chat_message, extras_chat_message) = build_extras_chat_message(
+        input.raw_unofficial_extras_chat_message,
+        input.unofficial_extras_chat_message,
+    );
     let abstract_extras_init = build_extras_init(
         input.raw_unofficial_extras_init,
         input.unofficial_extras_init,
         extras_squad_update,
+        extras_chat_message,
         &out_name,
     );
 
@@ -105,6 +110,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #abstract_wnd_filter
             #abstract_wnd_nofilter
             #abstract_extras_squad_update
+            #abstract_extras_chat_message
             #abstract_extras_init
 
             static EXPORT: ArcDpsExport = #export;
@@ -202,14 +208,43 @@ fn build_extras_squad_update(
     (abstract_wrapper, cb_safe)
 }
 
+fn build_extras_chat_message(
+    raw: Option<Expr>,
+    safe: Option<Expr>,
+) -> (TokenStream, Option<TokenStream>) {
+    let mut abstract_wrapper = quote! {};
+    let cb_safe = match (raw, safe) {
+        (Some(raw), _) => {
+            let span = syn::Error::new_spanned(&raw, "").span();
+            Some(quote_spanned!(span => Some(#raw as _) ))
+        }
+        (_, Some(safe)) => {
+            let span = syn::Error::new_spanned(&safe, "").span();
+            abstract_wrapper = quote_spanned!(span =>
+            unsafe extern "C" fn abstract_extras_chat_message(msg: *const ::arcdps::RawChatMessageInfo) {
+                let _ = #safe as ::arcdps::ExtrasChatMessageCallback;
+                let msg = ::arcdps::helpers::convert_extras_chat_message(&*msg);
+                #safe(&msg)
+            });
+            Some(
+                quote_spanned!(span => Some(__arcdps_gen_export::abstract_extras_chat_message as _) ),
+            )
+        }
+        _ => None,
+    };
+    (abstract_wrapper, cb_safe)
+}
+
 fn build_extras_init(
     raw: Option<Expr>,
     safe: Option<Expr>,
     squad_update: Option<TokenStream>,
+    chat_message: Option<TokenStream>,
     name: &LitStr,
 ) -> TokenStream {
-    let has_update = squad_update.is_some();
+    let needs_init = squad_update.is_some() || chat_message.is_some();
     let squad_cb = squad_update.unwrap_or(quote! { None });
+    let chat_cb = chat_message.unwrap_or(quote! { None });
 
     let basic_init = quote!(
         if addon.api_version != 2 {
@@ -219,14 +254,26 @@ fn build_extras_init(
             return;
         }
 
-        let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
-        let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV1);
+        if addon.max_info_version == 1 {
+            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
+            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV1);
 
-        sub.info_version = 1;
-        sub.subscriber_name = #name.as_ptr();
-        sub.squad_update_callback = #squad_cb;
-        sub.language_changed_callback = None;
-        sub.key_bind_changed_callback = None;
+            sub.info_version = 1;
+            sub.subscriber_name = #name.as_ptr();
+            sub.squad_update_callback = #squad_cb;
+            sub.language_changed_callback = None;
+            sub.key_bind_changed_callback = None;
+        } else {
+            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
+            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV2);
+
+            sub.info_version = 2;
+            sub.subscriber_name = #name.as_ptr();
+            sub.squad_update_callback = #squad_cb;
+            sub.language_changed_callback = None;
+            sub.key_bind_changed_callback = None;
+            sub.chat_message_callback = #chat_cb;
+        }
     );
 
     let abstract_wrapper = match (raw, safe) {
@@ -251,7 +298,7 @@ fn build_extras_init(
                 #safe(user, version)
             )
         }
-        _ if has_update => basic_init,
+        _ if needs_init => basic_init,
         _ => return quote! {},
     };
     use syn::spanned::Spanned;
