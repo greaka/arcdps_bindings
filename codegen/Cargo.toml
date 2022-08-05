@@ -1,6 +1,6 @@
 [package]
 name = "arcdps_codegen"
-version = "0.7.1"
+version = "0.8.0"
 authors = ["greaka <crates@greaka.de>"]
 edition = "2018"
 description = "Macros for arcdps"
@@ -11,10 +11,10 @@ license = "MIT/Apache-2.0"
 proc-macro = true
 
 [dependencies]
-quote = "1.0.15"
-proc-macro2 = "1.0.36"
-paste = "1.0.6"
+quote = "1.0.21"
+proc-macro2 = "1.0.43"
+paste = "1.0.8"
 
 [dependencies.syn]
-version = "1.0.86"
+version = "1.0.99"
 features = ["full"]
