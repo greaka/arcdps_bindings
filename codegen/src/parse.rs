@@ -53,6 +53,7 @@ pub(crate) struct ArcDpsGen {
     pub raw_combat_local: Option<Expr>,
     pub raw_unofficial_extras_init: Option<Expr>,
     pub raw_unofficial_extras_squad_update: Option<Expr>,
+    pub raw_unofficial_extras_chat_message: Option<Expr>,
     pub wnd_nofilter: Option<Expr>,
     pub combat: Option<Expr>,
     pub imgui: Option<Expr>,
@@ -62,6 +63,7 @@ pub(crate) struct ArcDpsGen {
     pub options_windows: Option<Expr>,
     pub unofficial_extras_init: Option<Expr>,
     pub unofficial_extras_squad_update: Option<Expr>,
+    pub unofficial_extras_chat_message: Option<Expr>,
 }
 
 impl syn::parse::Parse for ArcDpsGen {
@@ -84,6 +86,7 @@ impl syn::parse::Parse for ArcDpsGen {
             wnd_nofilter: None,
             unofficial_extras_init: None,
             unofficial_extras_squad_update: None,
+            unofficial_extras_chat_message: None,
 
             raw_combat: None,
             raw_combat_local: None,
@@ -94,6 +97,7 @@ impl syn::parse::Parse for ArcDpsGen {
             raw_wnd_nofilter: None,
             raw_unofficial_extras_init: None,
             raw_unofficial_extras_squad_update: None,
+            raw_unofficial_extras_chat_message: None,
         };
 
         let mut sig_done = false;
@@ -144,7 +148,8 @@ impl syn::parse::Parse for ArcDpsGen {
                             wnd_filter,
                             wnd_nofilter,
                             unofficial_extras_init,
-                            unofficial_extras_squad_update
+                            unofficial_extras_squad_update,
+                            unofficial_extras_chat_message
                         )
                     }
                 };

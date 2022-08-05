@@ -1,14 +1,23 @@
+// Generated against hash 83db782 of unofficial_extras_releases
+
+use std::os::raw::c_void;
+use chrono::{DateTime, FixedOffset};
+
+use crate::unofficial_extras::raw_structs_keybinds;
+
+pub type HMODULE = *mut c_void;
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum UserRole {
     SquadLeader = 0,
-    Lieutenant  = 1,
-    Member      = 2,
-    Invited     = 3,
-    Applied     = 4,
-    None        = 5,
+    Lieutenant = 1,
+    Member = 2,
+    Invited = 3,
+    Applied = 4,
+    None = 5,
     /// Internal only
-    Invalid     = 6,
+    Invalid = 6,
 }
 
 #[derive(Debug)]
@@ -83,7 +92,7 @@ pub struct UserInfo<'a> {
 
 #[repr(C)]
 pub struct RawUserInfo {
-    /// Account name, including leading `:`.
+    /// Null terminated account name, including leading `:`.
     /// Only valid for the duration of the call
     pub account_name: *const u8,
 
@@ -116,36 +125,172 @@ pub struct RawUserInfo {
     pub _unused2: u32,
 }
 
+#[repr(i32)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Language {
+    English = 0,
+    French = 2,
+    German = 3,
+    Spanish = 4,
+    Chinese = 5,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ChannelType {
+    Party = 0,
+    Squad = 1,
+    _Reserved = 2,
+    Invalid = 3,
+}
+
+#[derive(Debug)]
+pub struct ChatMessageInfo<'a> {
+    /// A unique identifier for the channel this chat message was sent over. Can
+    /// be used to, for example, differentiate between squad messages sent to
+    /// different squads
+    pub channel_id: u32,
+
+    /// Whether the message is sent in a party or a squad. Note that messages
+    /// sent to the party chat while in a squad will have the type
+    /// ChannelType::Squad
+    pub channel_type: ChannelType,
+
+    /// The subgroup the message was sent to, or UINT8_MAX if it was sent to the
+    /// entire squad.
+    pub subgroup: u8,
+
+    /// Whether this message is a broadcast or not
+    pub is_broadcast: bool,
+
+    /// A DateTime denoting when this message was received by the server. This
+    /// is the "absolute ordering" for chat messages, however the time can
+    /// potentially differ several seconds between the client and server because
+    /// of latency and clock skew. The string is only valid for the duration of
+    /// the call.
+    pub timestamp: DateTime<FixedOffset>,
+
+    /// Null terminated account name of the player that sent the message,
+    /// including leading ':'. The string is only valid for the duration of the
+    /// call.
+    pub account_name: &'a str,
+
+    /// Null terminated character name of the player that sent the message. The
+    /// string is only valid for the duration of the call.
+    pub character_name: &'a str,
+
+    /// Null terminated string containing the content of the message that was
+    /// sent. The string is only valid for the duration of the call.
+    pub text: &'a str,
+}
+
+#[repr(C)]
+pub struct RawChatMessageInfo {
+    /// A unique identifier for the channel this chat message was sent over. Can
+    /// be used to, for example, differentiate between squad messages sent to
+    /// different squads
+    pub channel_id: u32,
+
+    /// Whether the message is sent in a party or a squad. Note that messages
+    /// sent to the party chat while in a squad will have the type
+    /// ChannelType::Squad
+    pub channel_type: ChannelType,
+
+    /// The subgroup the message was sent to, or 0 if it was sent to the entire
+    /// squad.
+    pub subgroup: u8,
+
+    /// This lowest bit of this field will be set to 1 if the message is a
+    /// broadcast, and 0 if it is not a broadcast. The upper bits of this field
+    /// may be used in a later version and MUST NOT be interpreted
+    pub is_broadcast: u8,
+
+    pub _unused1: u8,
+
+    /// Null terminated iso8601 formatted string denoting when this message was
+    /// received by the server, e.g. "2022-07-09T11:45:24.888Z". This is the
+    /// "absolute ordering" for chat messages, however the time can potentially
+    /// differ several seconds between the client and server because of latency
+    /// and clock skew. The string is only valid for the duration of the call.
+    pub timestamp: *const u8,
+    pub timestamp_length: u64,
+
+    /// Null terminated account name of the player that sent the message,
+    /// including leading ':'. The string is only valid for the duration of the
+    /// call.
+    pub account_name: *const u8,
+    pub account_name_length: u64,
+
+    /// Null terminated character name of the player that sent the message. The
+    /// string is only valid for the duration of the call.
+    pub character_name: *const u8,
+    pub character_name_length: u64,
+
+    /// Null terminated string containing the content of the message that was
+    /// sent. The string is only valid for the duration of the call.
+    pub text: *const u8,
+    pub text_length: u64,
+}
+
 #[repr(C)]
 pub struct RawExtrasAddonInfo {
     /// Version of the api, gets incremented whenever a function signature or
-    /// behavior changes in a breaking way. Current version is 1.
+    /// behavior changes in a breaking way. Current version is 2.
     pub api_version: u32,
 
-    /// padding
-    pub _unused: u32,
+    /// Highest known version of the ExtrasSubscriberInfo struct.
+    /// Also determines the size of the pSubscriberInfo buffer in the init call
+    /// (the buffer is only guaranteed to have enough space for known
+    /// ExtrasSubscriberInfo versions).
+    /// Current version is 2.
+    pub max_info_version: u32,
 
     /// String version of unofficial_extras addon, gets changed on every
-    /// release. The string is valid for the lifetime
-    /// of the unofficial_extras dll.
+    /// release. The string is valid for the lifetime of the unofficial_extras
+    /// dll.
     pub string_version: *const u8,
 
-    /// The account name of the logged in player, including leading `:`.
-    /// The string is only valid for the duration of the init call.
+    /// Null terminated account name of the logged in player, including leading
+    /// ':'. The string is only valid for the duration of the init call.
     pub self_account_name: *const u8,
+
+    /// The handle to the unofficial_extras module.
+    /// Use this to call the exports of the DLL.
+    pub extras_handle: HMODULE,
 }
 
-// typedef void (*SquadUpdateCallbackSignature)(const UserInfo* pUpdatedUsers,
-// uint64_t pUpdatedUsersCount);
+
 pub type RawSquadUpdateCallbackSignature = unsafe extern "C" fn(*const RawUserInfo, u64);
+pub type RawLanguageChangedCallbackSignature = unsafe extern "C" fn(Language);
+pub type RawKeyBindChangedCallbackSignature =
+    unsafe extern "C" fn(raw_structs_keybinds::KeyBindChanged);
+pub type RawChatMessageCallbackSignature = unsafe extern "C" fn(*const RawChatMessageInfo);
+
+#[repr(C)]
+pub struct RawExtrasSubscriberInfoHeader {
+    /// The version of the following info struct
+    /// This has to be set to the version you want to use.
+    pub info_version: u32,
+
+    pub _unused1: u32,
+}
 
 use std::{iter::Map, slice::Iter};
 pub type ExtrasSquadUpdateCallback = fn(UserInfoIter);
+pub type ExtrasChatMessageCallback = fn(&ChatMessageInfo);
 pub type UserInfoIter<'a> = Map<Iter<'a, RawUserInfo>, UserConvert>;
 pub type UserConvert = for<'r> fn(&'r RawUserInfo) -> UserInfo;
 
 #[repr(C)]
-pub struct RawExtrasSubscriberInfo {
+pub struct RawExtrasSubscriberInfoV1 {
+    // TODO: Is there a way to do inheritance in rust, or does the header need
+    // to be copied into every struct version?
+    /// The version of the following info struct
+    /// This has to be set to the version you want to use.
+    pub info_version: u32,
+
+    pub _unused1: u32,
+
     /// Name of the addon subscribing to the changes. Must be valid for the
     /// lifetime of the subcribing addon. Set to `nullptr` if initialization
     /// fails
@@ -155,17 +300,83 @@ pub struct RawExtrasSubscriberInfo {
     /// changed are sent. If a user is removed from the squad, it will be
     /// sent with [`RawUserInfo::role`]` == `[`UserRole::None`]
     pub squad_update_callback: Option<RawSquadUpdateCallbackSignature>,
+
+    /// Called whenever the language is changed. Either by Changing it in the UI
+    /// or by pressing the Right Ctrl (default) key. Will also be called
+    /// directly after initialization, with the current language, to get the
+    /// startup language.
+    pub language_changed_callback: Option<RawLanguageChangedCallbackSignature>,
+
+    /// Called whenever a KeyBind is changed.
+    /// By changing it in the ingame UI, by pressing the translation shortcut or
+    /// with the Presets feature of this plugin. It is called for every keyBind
+    /// separately.
+    ///
+    /// After initialization this is called for every current keybind that
+    /// exists. If you want to get a single keybind, at any time you want, call
+    /// the exported function.
+    pub key_bind_changed_callback: Option<RawKeyBindChangedCallbackSignature>,
+}
+
+#[repr(C)]
+pub struct RawExtrasSubscriberInfoV2 {
+    // TODO: Is there a way to do inheritance in rust, or does the header need
+    // to be copied into every struct version?
+    /// The version of the following info struct
+    /// This has to be set to the version you want to use.
+    pub info_version: u32,
+
+    pub _unused1: u32,
+
+    /// Name of the addon subscribing to the changes. Must be valid for the
+    /// lifetime of the subcribing addon. Set to `nullptr` if initialization
+    /// fails
+    pub subscriber_name: *const u8,
+
+    /// Called whenever anything in the squad changes. Only the users that
+    /// changed are sent. If a user is removed from the squad, it will be
+    /// sent with [`RawUserInfo::role`]` == `[`UserRole::None`]
+    pub squad_update_callback: Option<RawSquadUpdateCallbackSignature>,
+
+    /// Called whenever the language is changed. Either by Changing it in the UI
+    /// or by pressing the Right Ctrl (default) key. Will also be called
+    /// directly after initialization, with the current language, to get the
+    /// startup language.
+    pub language_changed_callback: Option<RawLanguageChangedCallbackSignature>,
+
+    /// Called whenever a KeyBind is changed.
+    /// By changing it in the ingame UI, by pressing the translation shortcut or
+    /// with the Presets feature of this plugin. It is called for every keyBind
+    /// separately.
+    ///
+    /// After initialization this is called for every current keybind that
+    /// exists. If you want to get a single keybind, at any time you want, call
+    /// the exported function.
+    pub key_bind_changed_callback: Option<RawKeyBindChangedCallbackSignature>,
+
+    /// Called whenever a chat message is sent in your party/squad
+    pub chat_message_callback: Option<RawChatMessageCallbackSignature>,
 }
 
 /// This function must be exported by subscriber addons as
-/// `arcdps_unofficial_extras_subscriber_init`. It's called once at startup. Can
-/// be called before or after arcdps calls mod_init. Set
-/// [`RawExtrasSubscriberInfo::subscriber_name`] to `nullptr` if initialization
-/// fails.
-// typedef void (*ExtrasSubscriberInitSignature)(const ExtrasAddonInfo*
-// pExtrasInfo, ExtrasSubscriberInfo* pSubscriberInfo);
+/// 'arcdps_unofficial_extras_subscriber_init'. It's called once at startup. Can
+/// be called before or after arcdps calls mod_init.
+///
+/// The callee MUST verify that [`RawExtrasAddonInfo::api_version`] is the version it
+/// expects (which is the current api_version when the callee was written). The
+/// callee MUST verify that [`RawExtrasAddonInfo::max_info_version`] is equal to or higher
+/// than the ExtrasSubscriberInfo struct version it intends to use (to ensure
+/// that the buffer has enough room for the info struct). The callee MAY use the
+/// [`RawExtrasAddonInfo::max_info_version`] field to dynamically determine which info
+/// version to use, in order to gain backwards compatibility. If any of these
+/// verifications fail, the callee MUST return without modifying the buffer
+/// pointed to by pSubscriberInfo.
+///
+/// The callee SHOULD populate the buffer pointed to by pSubscriberInfo with one
+/// of the ExtrasSubscriberInfo structs above. If initialization fails, the
+/// callee SHOULD leave the buffer untouched to indicate initialization failure
 pub type RawExtrasSubscriberInitSignature =
-    unsafe extern "C" fn(&RawExtrasAddonInfo, &mut RawExtrasSubscriberInfo);
+    unsafe extern "C" fn(&RawExtrasAddonInfo, &mut RawExtrasSubscriberInfoHeader);
 
 /// Called at startup of unofficial extras. Can be called before or after arcdps
 /// init func. Provides the account name and the version of the unofficial
