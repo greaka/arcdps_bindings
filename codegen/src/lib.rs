@@ -135,7 +135,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 let res: Result<(), Box<dyn ::std::error::Error>> = #init;
                 if let Err(e) = res {
                     unsafe {
-                        ERROR_STRING = e.to_string();
+                        ERROR_STRING = e.to_string() + "\0";
                         EXPORT_ERROR.size = ERROR_STRING.as_ptr() as _;
                         export = &EXPORT_ERROR;
                     }
