@@ -37,7 +37,8 @@ pub unsafe fn get_str_from_pc_char(src: PCCHAR) -> Option<&'static str> {
     }
 }
 
-/// Converts a pointer and length into a &str with a lifetime. The pointer must not be null
+/// Converts a pointer and length into a &str with a lifetime. The pointer must
+/// not be null
 #[inline(always)]
 pub unsafe fn get_str_from_ptr_and_len(src: *const u8, len: u64) -> &'static str {
     let buff = std::slice::from_raw_parts(src, len as usize);
@@ -62,8 +63,10 @@ pub fn convert_extras_chat_message(msg: &RawChatMessageInfo) -> ChatMessageInfo 
     let timestamp = unsafe { get_str_from_ptr_and_len(msg.timestamp, msg.timestamp_length) };
     let timestamp = chrono::DateTime::parse_from_rfc3339(timestamp).unwrap();
 
-    let account_name = unsafe { get_str_from_ptr_and_len(msg.account_name, msg.account_name_length) };
-    let character_name = unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
+    let account_name =
+        unsafe { get_str_from_ptr_and_len(msg.account_name, msg.account_name_length) };
+    let character_name =
+        unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
     let text = unsafe { get_str_from_ptr_and_len(msg.text, msg.text_length) };
     let is_broadcast = (msg.is_broadcast & 0x01) != 0;
 

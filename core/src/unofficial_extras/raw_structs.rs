@@ -1,6 +1,7 @@
 // Generated against hash 83db782 of unofficial_extras_releases
 
 use std::os::raw::c_void;
+
 use chrono::{DateTime, FixedOffset};
 
 use crate::unofficial_extras::raw_structs_keybinds;
@@ -11,13 +12,13 @@ pub type HMODULE = *mut c_void;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum UserRole {
     SquadLeader = 0,
-    Lieutenant = 1,
-    Member = 2,
-    Invited = 3,
-    Applied = 4,
-    None = 5,
+    Lieutenant  = 1,
+    Member      = 2,
+    Invited     = 3,
+    Applied     = 4,
+    None        = 5,
     /// Internal only
-    Invalid = 6,
+    Invalid     = 6,
 }
 
 #[derive(Debug)]
@@ -129,8 +130,8 @@ pub struct RawUserInfo {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Language {
     English = 0,
-    French = 2,
-    German = 3,
+    French  = 2,
+    German  = 3,
     Spanish = 4,
     Chinese = 5,
 }
@@ -138,10 +139,10 @@ pub enum Language {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ChannelType {
-    Party = 0,
-    Squad = 1,
+    Party     = 0,
+    Squad     = 1,
     _Reserved = 2,
-    Invalid = 3,
+    Invalid   = 3,
 }
 
 #[derive(Debug)]
@@ -259,7 +260,6 @@ pub struct RawExtrasAddonInfo {
     pub extras_handle: HMODULE,
 }
 
-
 pub type RawSquadUpdateCallbackSignature = unsafe extern "C" fn(*const RawUserInfo, u64);
 pub type RawLanguageChangedCallbackSignature = unsafe extern "C" fn(Language);
 pub type RawKeyBindChangedCallbackSignature =
@@ -362,15 +362,16 @@ pub struct RawExtrasSubscriberInfoV2 {
 /// 'arcdps_unofficial_extras_subscriber_init'. It's called once at startup. Can
 /// be called before or after arcdps calls mod_init.
 ///
-/// The callee MUST verify that [`RawExtrasAddonInfo::api_version`] is the version it
-/// expects (which is the current api_version when the callee was written). The
-/// callee MUST verify that [`RawExtrasAddonInfo::max_info_version`] is equal to or higher
+/// The callee MUST verify that [`RawExtrasAddonInfo::api_version`] is the
+/// version it expects (which is the current api_version when the callee was
+/// written). The callee MUST verify that
+/// [`RawExtrasAddonInfo::max_info_version`] is equal to or higher
 /// than the ExtrasSubscriberInfo struct version it intends to use (to ensure
 /// that the buffer has enough room for the info struct). The callee MAY use the
-/// [`RawExtrasAddonInfo::max_info_version`] field to dynamically determine which info
-/// version to use, in order to gain backwards compatibility. If any of these
-/// verifications fail, the callee MUST return without modifying the buffer
-/// pointed to by pSubscriberInfo.
+/// [`RawExtrasAddonInfo::max_info_version`] field to dynamically determine
+/// which info version to use, in order to gain backwards compatibility. If any
+/// of these verifications fail, the callee MUST return without modifying the
+/// buffer pointed to by pSubscriberInfo.
 ///
 /// The callee SHOULD populate the buffer pointed to by pSubscriberInfo with one
 /// of the ExtrasSubscriberInfo structs above. If initialization fails, the
