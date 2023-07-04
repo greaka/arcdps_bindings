@@ -13,7 +13,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(item as parse::ArcDpsGen);
     let sig = input.sig;
     let build = std::env::var("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION is not set") + "\0";
-    let build = syn::LitStr::new(build.as_str(), Span::call_site());
+    let build = LitStr::new(build.as_str(), Span::call_site());
     let (raw_name, span) = if let Some(input_name) = input.name {
         let name = input_name.value();
         (name, input_name.span())
@@ -21,9 +21,9 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let name = std::env::var("CARGO_PKG_NAME").expect("CARGO_PKG_NAME is not set");
         (name, Span::call_site())
     };
-    let name = syn::LitStr::new(raw_name.as_str(), span.clone());
+    let name = LitStr::new(raw_name.as_str(), span.clone());
     let out_name = raw_name + "\0";
-    let out_name = syn::LitStr::new(out_name.as_str(), span);
+    let out_name = LitStr::new(out_name.as_str(), span);
 
     let (abstract_combat, cb_combat) = build_combat(input.raw_combat, input.combat);
     let (abstract_combat_local, cb_combat_local) =
@@ -85,11 +85,55 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         &out_name,
     );
 
+    #[cfg(feature = "imgui")]
+    let sys_init = quote! {
+        use ::arcdps::imgui;
+
+        #[no_mangle]
+        // export -- arcdps looks for this exported function and calls the address it returns on client load
+        // if you need any of the ignored values, create an issue with your use case
+        pub unsafe extern "system" fn get_init_addr(
+            arc_version: PCCHAR,
+            imguictx: *mut imgui::sys::ImGuiContext,
+            _id3dd9: LPVOID,
+            arc_dll: HANDLE,
+            mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
+            freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
+        ) -> fn() -> &'static ArcDpsExport {
+            imgui::sys::igSetCurrentContext(imguictx);
+            imgui::sys::igSetAllocatorFunctions(mallocfn, freefn, ::core::ptr::null_mut());
+            CTX = Some(imgui::Context::current());
+            UI = Some(imgui::Ui::from_ctx(CTX.as_ref().unwrap()));
+            ::arcdps::__init(arc_version, arc_dll, #name);
+            load
+        }
+
+        static mut CTX: Option<imgui::Context> = None;
+        static mut UI: Option<imgui::Ui> = None;
+    };
+
+    #[cfg(not(feature = "imgui"))]
+    let sys_init = quote! {
+        #[no_mangle]
+        // export -- arcdps looks for this exported function and calls the address it returns on client load
+        // if you need any of the ignored values, create an issue with your use case
+        pub unsafe extern "system" fn get_init_addr(
+            arc_version: PCCHAR,
+            _imguictx: *mut c_void,
+            _id3dd9: LPVOID,
+            arc_dll: HANDLE,
+            _mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
+            _freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
+        ) -> fn() -> &'static ArcDpsExport {
+            ::arcdps::__init(arc_version, arc_dll, #name);
+            load
+        }
+    };
+
     let res = quote! {
         mod __arcdps_gen_export {
             use super::*;
             use ::std::os::raw::{c_char, c_void};
-            use ::arcdps::imgui;
             use ::arcdps::helpers;
             use ::arcdps::ArcDpsExport;
             use ::arcdps::{InitFunc, ReleaseFunc};
@@ -148,27 +192,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 #release
             }
 
-            #[no_mangle]
-            // export -- arcdps looks for this exported function and calls the address it returns on client load
-            // if you need any of the ignored values, create an issue with your use case
-            pub unsafe extern "system" fn get_init_addr(
-                arc_version: PCCHAR,
-                imguictx: *mut imgui::sys::ImGuiContext,
-                _id3dd9: LPVOID,
-                arc_dll: HANDLE,
-                mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
-                freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
-            ) -> fn() -> &'static ArcDpsExport {
-                imgui::sys::igSetCurrentContext(imguictx);
-                imgui::sys::igSetAllocatorFunctions(mallocfn, freefn, ::core::ptr::null_mut());
-                CTX = Some(imgui::Context::current());
-                UI = Some(imgui::Ui::from_ctx(CTX.as_ref().unwrap()));
-                ::arcdps::__init(arc_version, arc_dll, #name);
-                load
-            }
-
-            static mut CTX: Option<imgui::Context> = None;
-            static mut UI: Option<imgui::Ui> = None;
+            #sys_init
 
             #[no_mangle]
             /* export -- arcdps looks for this exported function and calls the address it returns on client exit */

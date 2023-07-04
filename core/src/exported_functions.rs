@@ -28,7 +28,13 @@ pub unsafe fn e3(s: *mut u8) {
 }
 
 static mut E5: Option<Export5> = None;
+#[cfg(feature = "imgui")]
 pub unsafe fn e5(out: *mut [*mut imgui::sys::ImVec4; 5]) {
+    E5.get_or_insert_with(|| transmute(get_func("e5")))(out)
+}
+
+#[cfg(not(feature = "imgui"))]
+pub unsafe fn e5(out: *mut [*mut [f32; 4]; 5]) {
     E5.get_or_insert_with(|| transmute(get_func("e5")))(out)
 }
 

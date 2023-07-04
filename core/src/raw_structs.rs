@@ -53,12 +53,21 @@ pub type WndProcCallback = fn(key: usize, key_down: bool, prev_key_down: bool) -
 /// Provides a [imgui::Ui] object that is needed to draw anything.
 /// The second parameter is true whenever the player is __not__ in character
 /// select, loading screens or forced cameras.
+#[cfg(feature = "imgui")]
 pub type ImguiCallback = fn(ui: &imgui::Ui, not_character_select_or_loading: bool);
+#[cfg(not(feature = "imgui"))]
+pub type ImguiCallback = fn(not_character_select_or_loading: bool);
 /// Provides a [imgui::Ui] object that is needed to draw anything.
+#[cfg(feature = "imgui")]
 pub type OptionsCallback = fn(ui: &imgui::Ui);
+#[cfg(not(feature = "imgui"))]
+pub type OptionsCallback = fn();
 /// Called per window option checkbox. Does not draw the checkbox if returned
 /// true.
+#[cfg(feature = "imgui")]
 pub type OptionsWindowsCallback = fn(ui: &imgui::Ui, window_name: Option<&str>) -> bool;
+#[cfg(not(feature = "imgui"))]
+pub type OptionsWindowsCallback = fn(window_name: Option<&str>) -> bool;
 /// Provides safe abstractions for the combat event.
 pub type CombatCallback = fn(
     ev: Option<&CombatEvent>,
@@ -71,7 +80,10 @@ pub type CombatCallback = fn(
 
 pub type Export0 = unsafe extern "C" fn() -> *mut u16;
 pub type Export3 = unsafe extern "C" fn(*mut u8);
+#[cfg(feature = "imgui")]
 pub type Export5 = unsafe extern "C" fn(*mut [*mut imgui::sys::ImVec4; 5]);
+#[cfg(not(feature = "imgui"))]
+pub type Export5 = unsafe extern "C" fn(*mut [*mut [f32; 4]; 5]);
 pub type Export6 = unsafe extern "C" fn() -> u64;
 pub type Export7 = unsafe extern "C" fn() -> u64;
 pub type Export8 = Export3;

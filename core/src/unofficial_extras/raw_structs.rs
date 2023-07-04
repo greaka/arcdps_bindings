@@ -1,12 +1,8 @@
 // Generated against hash 83db782 of unofficial_extras_releases
 
-use std::os::raw::c_void;
-
 use chrono::{DateTime, FixedOffset};
 
-use crate::unofficial_extras::raw_structs_keybinds;
-
-pub type HMODULE = *mut c_void;
+use crate::{raw_structs::HMODULE, unofficial_extras::raw_structs_keybinds};
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
