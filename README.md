@@ -1,4 +1,4 @@
-# Arcdps Plugin Bindings
+# Arcdps Plugin Bindings [![Latest Version](https://img.shields.io/crates/v/arcdps.svg)](https://crates.io/crates/arcdps)
 
 This provides arcdps plugin bindings featuring safe, zero-cost abstractions.
 
