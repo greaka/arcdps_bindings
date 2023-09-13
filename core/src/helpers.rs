@@ -61,7 +61,9 @@ pub fn convert_extras_user(user: &RawUserInfo) -> UserInfo {
 #[inline(always)]
 pub fn convert_extras_chat_message(msg: &RawChatMessageInfo) -> ChatMessageInfo {
     let timestamp = unsafe { get_str_from_ptr_and_len(msg.timestamp, msg.timestamp_length) };
-    let timestamp = chrono::DateTime::parse_from_rfc3339(timestamp).unwrap();
+    let timestamp =
+        time::OffsetDateTime::parse(timestamp, &time::format_description::well_known::Rfc3339)
+            .unwrap();
 
     let account_name =
         unsafe { get_str_from_ptr_and_len(msg.account_name, msg.account_name_length) };

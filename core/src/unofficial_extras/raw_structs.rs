@@ -1,6 +1,6 @@
 // Generated against hash 83db782 of unofficial_extras_releases
 
-use chrono::{DateTime, FixedOffset};
+use time::OffsetDateTime;
 
 use crate::{raw_structs::HMODULE, unofficial_extras::raw_structs_keybinds};
 
@@ -165,7 +165,7 @@ pub struct ChatMessageInfo<'a> {
     /// potentially differ several seconds between the client and server because
     /// of latency and clock skew. The string is only valid for the duration of
     /// the call.
-    pub timestamp: DateTime<FixedOffset>,
+    pub timestamp: OffsetDateTime,
 
     /// Null terminated account name of the player that sent the message,
     /// including leading ':'. The string is only valid for the duration of the
