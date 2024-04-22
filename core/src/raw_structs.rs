@@ -39,7 +39,7 @@ pub type RawOptionsCallback = unsafe extern "C" fn();
 /// return disables arcdps drawing that checkbox
 pub type RawOptionsWindowsCallback = unsafe extern "C" fn(window_name: PCCHAR) -> bool;
 
-/// Gets called on load.
+/// Gets called on load. First parameter is id3dptr (swapchain) provided by arcdps.
 pub type InitFunc = fn(Option<LPVOID>) -> Result<(), Box<dyn std::error::Error>>;
 /// Gets called on unload.
 pub type ReleaseFunc = fn();
