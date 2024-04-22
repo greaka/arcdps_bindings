@@ -132,7 +132,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             load
         }
 
-        static mut SWAPCHAIN: LPVOID = Option<LPVOID> = None;
+        static mut SWAPCHAIN: Option<LPVOID> = None;
     };
 
     let res = quote! {
