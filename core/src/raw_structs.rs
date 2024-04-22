@@ -40,7 +40,7 @@ pub type RawOptionsCallback = unsafe extern "C" fn();
 pub type RawOptionsWindowsCallback = unsafe extern "C" fn(window_name: PCCHAR) -> bool;
 
 /// Gets called on load.
-pub type InitFunc = fn() -> Result<(), Box<dyn std::error::Error>>;
+pub type InitFunc = fn(Option<LPVOID>) -> Result<(), Box<dyn std::error::Error>>;
 /// Gets called on unload.
 pub type ReleaseFunc = fn();
 

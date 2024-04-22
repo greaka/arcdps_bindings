@@ -57,14 +57,14 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let init = if let Some(init) = input.init {
         let span = syn::Error::new_spanned(&init, "").span();
-        quote_spanned! (span => (#init as InitFunc)())
+        quote_spanned! (span => (#init as InitFunc)(SWAPCHAIN))
     } else {
         quote! {Ok(())}
     };
 
     let release = if let Some(release) = input.release {
         let span = syn::Error::new_spanned(&release, "").span();
-        quote_spanned! (span => (#release as ReleaseFunc)();)
+        quote_spanned! (span => (#release as ReleaseFunc)())
     } else {
         quote! {}
     };
@@ -95,7 +95,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         pub unsafe extern "system" fn get_init_addr(
             arc_version: PCCHAR,
             imguictx: *mut imgui::sys::ImGuiContext,
-            _id3dd9: LPVOID,
+            id3dd9: LPVOID,
             arc_dll: HANDLE,
             mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
@@ -104,12 +104,14 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             imgui::sys::igSetAllocatorFunctions(mallocfn, freefn, ::core::ptr::null_mut());
             CTX = Some(imgui::Context::current());
             UI = Some(imgui::Ui::from_ctx(CTX.as_ref().unwrap()));
+            SWAPCHAIN = if !id3dd9.is_null() { Some(id3dd9) } else { None };
             ::arcdps::__init(arc_version, arc_dll, #name);
             load
         }
 
         static mut CTX: Option<imgui::Context> = None;
         static mut UI: Option<imgui::Ui> = None;
+        static mut SWAPCHAIN: Option<LPVOID> = None;
     };
 
     #[cfg(not(feature = "imgui"))]
@@ -120,14 +122,17 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         pub unsafe extern "system" fn get_init_addr(
             arc_version: PCCHAR,
             _imguictx: *mut c_void,
-            _id3dd9: LPVOID,
+            id3dd9: LPVOID,
             arc_dll: HANDLE,
             _mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             _freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
         ) -> fn() -> &'static ArcDpsExport {
+            SWAPCHAIN = if !id3dd9.is_null() { Some(id3dd9) } else { None };
             ::arcdps::__init(arc_version, arc_dll, #name);
             load
         }
+
+        static mut SWAPCHAIN: LPVOID = Option<LPVOID> = None;
     };
 
     let res = quote! {
@@ -176,7 +181,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
             fn load() -> &'static ArcDpsExport {
                 let mut export = &EXPORT;
-                let res: Result<(), Box<dyn ::std::error::Error>> = #init;
+                let res: Result<(), Box<dyn ::std::error::Error>> = unsafe { #init };
                 if let Err(e) = res {
                     unsafe {
                         ERROR_STRING = e.to_string() + "\0";
