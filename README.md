@@ -32,8 +32,8 @@ use arcdps::UserInfoIter;
 arcdps::arcdps_export! {
     name: "example addon",
     sig: 123, // change this to a random number
-    unofficial_extras_squad_update: squad_update,
-    init: init,
+    unofficial_extras_squad_update: crate::squad_update,
+    init: crate::init,
 }
 
 fn squad_update(users: UserInfoIter) {
@@ -42,7 +42,13 @@ fn squad_update(users: UserInfoIter) {
     }
 }
 
-fn init() -> Result<(), Box<dyn Error>> {
-    Ok(())
+fn init(swapchain: Option<NonNull<c_void>>) -> Result<(), Box<dyn Error>> {
+    match swapchain {
+        Some(swapchain) => {
+            println!("init: initialized with swapchain: {:?}", swapchain);
+            Ok(())
+        }
+        None => Err("init: swapchain is None".into()),
+    }
 }
 ```

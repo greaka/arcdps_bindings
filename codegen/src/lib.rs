@@ -21,7 +21,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let name = std::env::var("CARGO_PKG_NAME").expect("CARGO_PKG_NAME is not set");
         (name, Span::call_site())
     };
-    let name = LitStr::new(raw_name.as_str(), span.clone());
+    let name = LitStr::new(raw_name.as_str(), span);
     let out_name = raw_name + "\0";
     let out_name = LitStr::new(out_name.as_str(), span);
 
@@ -57,14 +57,14 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let init = if let Some(init) = input.init {
         let span = syn::Error::new_spanned(&init, "").span();
-        quote_spanned! (span => (#init as InitFunc)())
+        quote_spanned! (span => unsafe { (#init as InitFunc)(SWAPCHAIN) })
     } else {
         quote! {Ok(())}
     };
 
     let release = if let Some(release) = input.release {
         let span = syn::Error::new_spanned(&release, "").span();
-        quote_spanned! (span => (#release as ReleaseFunc)();)
+        quote_spanned! (span => (#release as ReleaseFunc)())
     } else {
         quote! {}
     };
@@ -95,7 +95,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         pub unsafe extern "system" fn get_init_addr(
             arc_version: PCCHAR,
             imguictx: *mut imgui::sys::ImGuiContext,
-            _id3dd9: LPVOID,
+            id3dptr: LPVOID,
             arc_dll: HANDLE,
             mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
@@ -104,6 +104,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             imgui::sys::igSetAllocatorFunctions(mallocfn, freefn, ::core::ptr::null_mut());
             CTX = Some(imgui::Context::current());
             UI = Some(imgui::Ui::from_ctx(CTX.as_ref().unwrap()));
+            SWAPCHAIN = NonNull::new(id3dptr);
             ::arcdps::__init(arc_version, arc_dll, #name);
             load
         }
@@ -120,11 +121,12 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         pub unsafe extern "system" fn get_init_addr(
             arc_version: PCCHAR,
             _imguictx: *mut c_void,
-            _id3dd9: LPVOID,
+            id3dptr: LPVOID,
             arc_dll: HANDLE,
             _mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             _freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
         ) -> fn() -> &'static ArcDpsExport {
+            SWAPCHAIN = NonNull::new(id3dptr);
             ::arcdps::__init(arc_version, arc_dll, #name);
             load
         }
@@ -134,6 +136,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         mod __arcdps_gen_export {
             use super::*;
             use ::std::os::raw::{c_char, c_void};
+            use ::std::ptr::NonNull;
             use ::arcdps::helpers;
             use ::arcdps::ArcDpsExport;
             use ::arcdps::{InitFunc, ReleaseFunc};
@@ -173,6 +176,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     wnd_nofilter: None,
                 };
             static mut ERROR_STRING: String = String::new();
+            static mut SWAPCHAIN: Option<NonNull<c_void>> = None;
 
             fn load() -> &'static ArcDpsExport {
                 let mut export = &EXPORT;

@@ -1,8 +1,10 @@
+#![allow(clippy::missing_safety_doc)]
 use std::ffi::CStr;
 
 use crate::*;
 
 /// A helper function to convert raw arguments to safe abstractions
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[inline(always)]
 pub fn get_combat_args_from_raw<'a>(
     raw_ev: Option<&'a CombatEvent>,
