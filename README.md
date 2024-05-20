@@ -42,7 +42,7 @@ fn squad_update(users: UserInfoIter) {
     }
 }
 
-fn init(swapchain: Option<LPVOID>) -> Result<(), Box<dyn Error>> {
+fn init(swapchain: Option<NonNull<c_void>>) -> Result<(), Box<dyn Error>> {
     match swapchain {
         Some(swapchain) => {
             println!("init: initialized with swapchain: {:?}", swapchain);

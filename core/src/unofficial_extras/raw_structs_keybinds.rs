@@ -1,4 +1,5 @@
 // Generated against hash 83db782 of unofficial_extras_releases
+#![allow(clippy::enum_variant_names)]
 
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
