@@ -6,6 +6,7 @@ use crate::{raw_structs::HMODULE, unofficial_extras::raw_structs_keybinds};
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum UserRole {
     SquadLeader = 0,
     Lieutenant  = 1,
@@ -18,6 +19,7 @@ pub enum UserRole {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct UserInfoOwned {
     /// Account name, without leading ':'.
     pub account_name: Option<String>,
@@ -59,6 +61,7 @@ impl From<UserInfo<'_>> for UserInfoOwned {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct UserInfo<'a> {
     /// Account name, without leading ':'.
     pub account_name: Option<&'a str>,
@@ -124,6 +127,7 @@ pub struct RawUserInfo {
 
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Language {
     English = 0,
     French  = 2,
@@ -134,6 +138,7 @@ pub enum Language {
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ChannelType {
     Party     = 0,
     Squad     = 1,
@@ -142,6 +147,7 @@ pub enum ChannelType {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ChatMessageInfo<'a> {
     /// A unique identifier for the channel this chat message was sent over. Can
     /// be used to, for example, differentiate between squad messages sent to

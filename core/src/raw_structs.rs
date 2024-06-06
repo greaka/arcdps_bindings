@@ -118,6 +118,7 @@ impl From<&RawAgent> for Agent<'_> {
 /// let agent: AgentOwned = agent.into();
 /// ```
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Agent<'a> {
     pub name: Option<&'a str>,
     pub id: usize,
@@ -130,6 +131,7 @@ pub struct Agent<'a> {
 /// An [`Agent`] with an owned [`String`].
 /// For more info see [`Agent`].
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct AgentOwned {
     pub name: Option<String>,
     pub id: usize,
@@ -154,6 +156,7 @@ impl From<Agent<'_>> for AgentOwned {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct CombatEvent {
     pub time: u64,
     pub src_agent: usize,

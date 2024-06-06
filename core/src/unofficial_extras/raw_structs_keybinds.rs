@@ -5,6 +5,7 @@
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum KeyControl {
     // Movement tab
     Movement_MoveForward           = 0,
@@ -202,6 +203,7 @@ pub enum KeyControl {
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum KeyCode {
     LeftAlt      = 0,
     LeftCtrl     = 1,
@@ -347,6 +349,7 @@ pub enum KeyCode {
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum MouseCode {
     Mouse_1  = 0,
     Mouse_3  = 1,
@@ -374,6 +377,7 @@ pub enum MouseCode {
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum DeviceType {
     Unset    = 0,
     Mouse    = 1,
@@ -384,6 +388,7 @@ pub enum DeviceType {
 #[allow(non_camel_case_types)]
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Modifier_ {
     Modifier_Shift = 1,
     Modifier_Ctrl  = 2,
@@ -394,6 +399,7 @@ pub type Modifier = i32;
 
 /// A single KeyBind
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Key {
     /// 0|1|2 (0 = unset, 1 = MouseKey, 2 = KeyboardKey)
     pub device_type: DeviceType,
@@ -405,12 +411,14 @@ pub struct Key {
 
 #[allow(dead_code)]
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KeyBind {
     primary: Key,
     secondary: Key,
 }
 
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KeyBindChanged {
     key_control: KeyControl,
     key_index: i32,
