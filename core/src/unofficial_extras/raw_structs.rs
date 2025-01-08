@@ -191,14 +191,6 @@ pub struct SquadMessageInfo<'a> {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NpcMessageInfo<'a> {
-    /// Null terminated character name of the player that sent the message. The
-    /// string is only valid for the duration of the call.
-    pub character_name: &'a str,
-
-    /// Null terminated string containing the content of the message that was
-    /// sent. The string is only valid for the duration of the call.
-    pub text: &'a str, // TODO: maybe rename it as raw?
-
     // temporary for work with blish-hud
     pub channel_id: u32,
     pub channel_type: ChannelType,
@@ -206,6 +198,14 @@ pub struct NpcMessageInfo<'a> {
     pub is_broadcast: bool,
     pub timestamp: DateTime<FixedOffset>,
     pub account_name: &'a str,
+
+    /// Null terminated character name of the player that sent the message. The
+    /// string is only valid for the duration of the call.
+    pub character_name: &'a str,
+
+    /// Null terminated string containing the content of the message that was
+    /// sent. The string is only valid for the duration of the call.
+    pub text: &'a str, // TODO: maybe rename it as raw?
 }
 
 #[repr(C)]

@@ -91,8 +91,6 @@ pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInf
     let text = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
 
     NpcMessageInfo {
-        character_name,
-        text,
         // temporary for work with blish-hud
         channel_id: 9999,
         channel_type: ChannelType::Squad,
@@ -100,6 +98,9 @@ pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInf
         is_broadcast: false,
         timestamp: Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap()),
         account_name: "",
+
+        character_name,
+        text,
     }
 }
 
