@@ -310,8 +310,8 @@ pub enum ChatMessageInfo2<'a> {
 
 #[repr(C)]
 pub union RawChatMessageInfo2 {
-    pub squad_message_info: ManuallyDrop<RawSquadMessageInfo>,
-    pub npc_message_info: ManuallyDrop<RawNpcMessageInfo>,
+    pub squad_message_info: *const RawSquadMessageInfo,
+    pub npc_message_info: *const RawNpcMessageInfo,
 }
 
 pub type RawSquadUpdateCallbackSignature = unsafe extern "C" fn(*const RawUserInfo, u64);
