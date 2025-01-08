@@ -191,15 +191,21 @@ pub struct SquadMessageInfo<'a> {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NpcMessageInfo<'a> {
-    pub channel_id: u32,
-    
-    /// Null terminated character name of the NPC or the player character.
-	/// The string is only valid for the duration of the call.
+    /// Null terminated character name of the player that sent the message. The
+    /// string is only valid for the duration of the call.
     pub character_name: &'a str,
 
-    /// Null terminated string of the message said by an npc or the user character.
-	/// The string is only valid for the duration of the call.
-    pub text: &'a str,
+    /// Null terminated string containing the content of the message that was
+    /// sent. The string is only valid for the duration of the call.
+    pub text: &'a str, // TODO: maybe rename it as raw?
+
+    // temporary for work with blish-hud
+    pub channel_id: u32,
+    pub channel_type: ChannelType,
+    pub subgroup: u8,
+    pub is_broadcast: bool,
+    pub timestamp: DateTime<FixedOffset>,
+    pub account_name: &'a str,
 }
 
 #[repr(C)]
@@ -291,7 +297,7 @@ pub struct RawExtrasAddonInfo {
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ChatMessageType {
 	// Called for party/squad messages. 
@@ -303,9 +309,9 @@ pub enum ChatMessageType {
 #[repr(C)]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub enum ChatMessageInfo2<'a> {
-    SquadMessageInfo(SquadMessageInfo<'a>),
-    NpcMessageInfo(NpcMessageInfo<'a>),
+pub struct ChatMessageInfo2<'a> {
+    pub squad_message_info: Option<SquadMessageInfo<'a>>,
+    pub npc_message_info: Option<NpcMessageInfo<'a>>,
 }
 
 #[repr(C)]
@@ -319,7 +325,7 @@ pub type RawLanguageChangedCallbackSignature = unsafe extern "C" fn(Language);
 pub type RawKeyBindChangedCallbackSignature =
     unsafe extern "C" fn(raw_structs_keybinds::KeyBindChanged);
 pub type RawChatMessageCallbackSignature = unsafe extern "C" fn(*const RawSquadMessageInfo);
-pub type RawChatMessage2CallbackSignature = unsafe extern "C" fn(*const ChatMessageType, *const RawChatMessageInfo2);
+pub type RawChatMessage2CallbackSignature = unsafe extern "C" fn(ChatMessageType, RawChatMessageInfo2);
 
 #[repr(C)]
 pub struct RawExtrasSubscriberInfoHeader {
@@ -333,7 +339,7 @@ pub struct RawExtrasSubscriberInfoHeader {
 use std::{iter::Map, slice::Iter};
 pub type ExtrasSquadUpdateCallback = fn(UserInfoIter);
 pub type ExtrasChatMessageCallback = fn(&SquadMessageInfo);
-pub type ExtrasChatMessage2Callback = fn(&ChatMessageType, &ChatMessageInfo2);
+pub type ExtrasChatMessage2Callback = fn(ChatMessageType, ChatMessageInfo2);
 pub type UserInfoIter<'a> = Map<Iter<'a, RawUserInfo>, UserConvert>;
 pub type UserConvert = for<'r> fn(&'r RawUserInfo) -> UserInfo;
 

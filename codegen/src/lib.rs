@@ -284,7 +284,7 @@ fn build_extras_chat_message2(
             abstract_wrapper = quote_spanned!(span =>
                 unsafe extern "C" fn abstract_extras_chat_message2(msg_type: ::arcdps::ChatMessageType, msg: ::arcdps::RawChatMessageInfo2) {
                 let _ = #safe as ::arcdps::ExtrasChatMessage2Callback;
-                let msg = ::arcdps::helpers::convert_extras_chat_message2(&*msg_type, &*msg);
+                let msg = ::arcdps::helpers::convert_extras_chat_message2(msg_type, msg);
                 #safe(msg_type, msg)
             });
             Some(

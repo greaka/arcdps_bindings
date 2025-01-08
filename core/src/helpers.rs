@@ -1,6 +1,6 @@
 #![allow(clippy::missing_safety_doc)]
 use std::ffi::CStr;
-
+use chrono::{FixedOffset, Utc};
 use crate::*;
 
 /// A helper function to convert raw arguments to safe abstractions
@@ -91,9 +91,15 @@ pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInf
     let text = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
 
     NpcMessageInfo {
-        channel_id: 9999,
         character_name,
         text,
+        // temporary for work with blish-hud
+        channel_id: 9999,
+        channel_type: ChannelType::Squad,
+        subgroup: 255,
+        is_broadcast: false,
+        timestamp: Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap()),
+        account_name: "",
     }
 }
 
@@ -108,13 +114,19 @@ pub fn convert_extras_chat_message2<'a>(
                 let raw_squad_msg = msg.squad_message_info;
                 let squad_info = &*raw_squad_msg;
                 let info = convert_extras_squad_chat_message(squad_info);
-                ChatMessageInfo2::SquadMessageInfo(info)
+                ChatMessageInfo2 {
+                    squad_message_info: Some(info),
+                    npc_message_info: None
+                }
             }
             ChatMessageType::NPC => {
                 let raw_npc_msg = msg.npc_message_info;
                 let npc_info = &*raw_npc_msg;
                 let info = convert_extras_npc_chat_message(npc_info);
-                ChatMessageInfo2::NpcMessageInfo(info)
+                ChatMessageInfo2 {
+                    squad_message_info: None,
+                    npc_message_info: Some(info),
+                }
             }
         }
     }
