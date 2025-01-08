@@ -49,6 +49,7 @@ pub struct SupportedFields {
     pub raw_unofficial_extras_init: Option<RawExtrasSubscriberInitSignature>,
     pub raw_unofficial_extras_squad_update: Option<RawSquadUpdateCallbackSignature>,
     pub raw_unofficial_extras_chat_message: Option<RawChatMessageCallbackSignature>,
+    pub raw_unofficial_extras_chat_message2: Option<RawChatMessage2CallbackSignature>,
     pub wnd_nofilter: Option<WndProcCallback>,
     pub combat: Option<CombatCallback>,
     pub imgui: Option<ImguiCallback>,
@@ -59,4 +60,5 @@ pub struct SupportedFields {
     pub unofficial_extras_init: Option<ExtrasInitFunc>,
     pub unofficial_extras_squad_update: Option<ExtrasSquadUpdateCallback>,
     pub unofficial_extras_chat_message: Option<ExtrasChatMessageCallback>,
+    pub unofficial_extras_chat_message2: Option<ExtrasChatMessage2Callback>,
 }

@@ -77,11 +77,16 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         input.raw_unofficial_extras_chat_message,
         input.unofficial_extras_chat_message,
     );
+    let (abstract_extras_chat_message2, extras_chat_message2) = build_extras_chat_message2(
+        input.raw_unofficial_extras_chat_message2,
+        input.unofficial_extras_chat_message2,
+    );
     let abstract_extras_init = build_extras_init(
         input.raw_unofficial_extras_init,
         input.unofficial_extras_init,
         extras_squad_update,
         extras_chat_message,
+        extras_chat_message2,
         &out_name,
     );
 
@@ -158,6 +163,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             #abstract_wnd_nofilter
             #abstract_extras_squad_update
             #abstract_extras_chat_message
+            #abstract_extras_chat_message2
             #abstract_extras_init
 
             static EXPORT: ArcDpsExport = #export;
@@ -249,13 +255,41 @@ fn build_extras_chat_message(
         (_, Some(safe)) => {
             let span = syn::Error::new_spanned(&safe, "").span();
             abstract_wrapper = quote_spanned!(span =>
-            unsafe extern "C" fn abstract_extras_chat_message(msg: *const ::arcdps::RawChatMessageInfo) {
+            unsafe extern "C" fn abstract_extras_chat_message(msg: *const ::arcdps::RawSquadMessageInfo) {
                 let _ = #safe as ::arcdps::ExtrasChatMessageCallback;
-                let msg = ::arcdps::helpers::convert_extras_chat_message(&*msg);
+                let msg = ::arcdps::helpers::convert_extras_squad_chat_message(&*msg);
                 #safe(&msg)
             });
             Some(
                 quote_spanned!(span => Some(__arcdps_gen_export::abstract_extras_chat_message as _) ),
+            )
+        }
+        _ => None,
+    };
+    (abstract_wrapper, cb_safe)
+}
+
+fn build_extras_chat_message2(
+    raw: Option<Expr>,
+    safe: Option<Expr>,
+) -> (TokenStream, Option<TokenStream>) {
+    let mut abstract_wrapper = quote! {};
+    let cb_safe = match (raw, safe) {
+        (Some(raw), _) => {
+            let span = syn::Error::new_spanned(&raw, "").span();
+            Some(quote_spanned!(span => Some(#raw as _) ))
+        }
+        (_, Some(safe)) => {
+            let span = syn::Error::new_spanned(&safe, "").span();
+            abstract_wrapper = quote_spanned!(span =>
+            unsafe extern "C" fn abstract_extras_chat_message2(msg_type: *const ::arcdps::ChatMessageType, msg: *const ::arcdps::RawChatMessageInfo2) {
+                let _ = #safe as ::arcdps::ExtrasChatMessage2Callback;
+                let msg_type_ref = unsafe { &*msg_type };
+                let msg = ::arcdps::helpers::convert_extras_chat_message2(&*msg_type, &*msg);
+                #safe(msg_type_ref, &msg)
+            });
+            Some(
+                quote_spanned!(span => Some(__arcdps_gen_export::abstract_extras_chat_message2 as _) ),
             )
         }
         _ => None,
@@ -268,11 +302,13 @@ fn build_extras_init(
     safe: Option<Expr>,
     squad_update: Option<TokenStream>,
     chat_message: Option<TokenStream>,
+    chat_message2: Option<TokenStream>,
     name: &LitStr,
 ) -> TokenStream {
     let needs_init = squad_update.is_some() || chat_message.is_some();
     let squad_cb = squad_update.unwrap_or(quote! { None });
     let chat_cb = chat_message.unwrap_or(quote! { None });
+    let chat_cb2 = chat_message2.unwrap_or(quote! { None });
 
     let basic_init = quote!(
         if addon.api_version != 2 {
@@ -291,7 +327,7 @@ fn build_extras_init(
             sub.squad_update_callback = #squad_cb;
             sub.language_changed_callback = None;
             sub.key_bind_changed_callback = None;
-        } else {
+        } else if addon.max_info_version == 2 {
             let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
             let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV2);
 
@@ -301,6 +337,17 @@ fn build_extras_init(
             sub.language_changed_callback = None;
             sub.key_bind_changed_callback = None;
             sub.chat_message_callback = #chat_cb;
+        } else {
+            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
+            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV3);
+
+            sub.info_version = 3;
+            sub.subscriber_name = #name.as_ptr();
+            sub.squad_update_callback = #squad_cb;
+            sub.language_changed_callback = None;
+            sub.key_bind_changed_callback = None;
+            sub.chat_message_callback = #chat_cb;
+            sub.chat_message_callback2 = #chat_cb2;
         }
     );
 

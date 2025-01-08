@@ -61,7 +61,7 @@ pub fn convert_extras_user(user: &RawUserInfo) -> UserInfo {
 }
 
 #[inline(always)]
-pub fn convert_extras_chat_message(msg: &RawChatMessageInfo) -> ChatMessageInfo {
+pub fn convert_extras_squad_chat_message(msg: &RawSquadMessageInfo) -> SquadMessageInfo {
     let timestamp = unsafe { get_str_from_ptr_and_len(msg.timestamp, msg.timestamp_length) };
     let timestamp = chrono::DateTime::parse_from_rfc3339(timestamp).unwrap();
 
@@ -72,7 +72,7 @@ pub fn convert_extras_chat_message(msg: &RawChatMessageInfo) -> ChatMessageInfo 
     let text = unsafe { get_str_from_ptr_and_len(msg.text, msg.text_length) };
     let is_broadcast = (msg.is_broadcast & 0x01) != 0;
 
-    ChatMessageInfo {
+    SquadMessageInfo {
         channel_id: msg.channel_id,
         channel_type: msg.channel_type,
         subgroup: msg.subgroup,
@@ -81,6 +81,40 @@ pub fn convert_extras_chat_message(msg: &RawChatMessageInfo) -> ChatMessageInfo 
         account_name: account_name.trim_start_matches(':'),
         character_name,
         text,
+    }
+}
+
+#[inline(always)]
+pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInfo {
+    let character_name =
+        unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
+    let text = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
+
+    NpcMessageInfo {
+        channel_id: 9999,
+        character_name,
+        text,
+    }
+}
+
+#[inline(always)]
+pub fn convert_extras_chat_message2<'a>(
+    msg_type: &ChatMessageType,
+    msg: &'a RawChatMessageInfo2,
+) -> ChatMessageInfo2<'a> {
+    unsafe {
+        match msg_type {
+            ChatMessageType::Squad => {
+                let raw_squad_msg = &(*msg).squad_message_info;
+                let info = convert_extras_squad_chat_message(&*raw_squad_msg);
+                ChatMessageInfo2::SquadMessageInfo(info)
+            }
+            ChatMessageType::NPC => {
+                let raw_npc_msg = &(*msg).npc_message_info;
+                let info = convert_extras_npc_chat_message(&*raw_npc_msg);
+                ChatMessageInfo2::NpcMessageInfo(info)
+            }
+        }
     }
 }
 
