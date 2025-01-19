@@ -92,7 +92,7 @@ pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInf
     let character_name =
         unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
     let timestamp: chrono::DateTime<FixedOffset> = Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap());
-    let message_id = NPC_MESSAGE_ID_COUNTER.fetch_add(1, Ordering::Relaxed) as u32;
+    let message_id = NPC_MESSAGE_ID_COUNTER.fetch_add(1, Ordering::Relaxed) as u64;
     let message = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
 
     NpcMessageInfo {

@@ -202,7 +202,7 @@ pub struct NpcMessageInfo<'a> {
 
     /// A unique identifier for the message. Can be used to, for example, 
     /// sort messages that arrived at the same time.
-    pub message_id: u32,
+    pub message_id: u64,
 
     /// Null terminated string containing the content of the message that was
     /// sent. The string is only valid for the duration of the call.
