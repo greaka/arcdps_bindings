@@ -1,7 +1,6 @@
 // Generated against hash 83db782 of unofficial_extras_releases
 
 use chrono::{DateTime, FixedOffset};
-use std::mem::ManuallyDrop;
 
 use crate::{raw_structs::HMODULE, unofficial_extras::raw_structs_keybinds};
 
@@ -261,12 +260,12 @@ pub struct RawSquadMessageInfo {
 #[repr(C)]
 pub struct RawNpcMessageInfo {
     /// Null terminated character name of the NPC or the player character.
-	/// The string is only valid for the duration of the call.
+    /// The string is only valid for the duration of the call.
     pub character_name: *const u8,
     pub character_name_length: u64,
 
     /// Null terminated string of the message said by an npc or the user character.
-	/// The string is only valid for the duration of the call.
+    /// The string is only valid for the duration of the call.
     pub message: *const u8,
     pub message_length: u64,
 }
@@ -302,10 +301,10 @@ pub struct RawExtrasAddonInfo {
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ChatMessageType {
-	// Called for party/squad messages. 
-	Squad = 0,
-	// Called for NPC Channel (selectable in ingame-chat as "NPC")
-	NPC = 1
+    // Called for party/squad messages. 
+    Squad = 0,
+    // Called for NPC Channel (selectable in ingame-chat as "NPC")
+    NPC = 1
 }
 
 #[repr(C)]
