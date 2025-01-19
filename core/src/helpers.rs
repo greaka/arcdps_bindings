@@ -1,6 +1,7 @@
 #![allow(clippy::missing_safety_doc)]
 use std::ffi::CStr;
 use chrono::{FixedOffset, Utc};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::*;
 
 /// A helper function to convert raw arguments to safe abstractions
@@ -84,23 +85,21 @@ pub fn convert_extras_squad_chat_message(msg: &RawSquadMessageInfo) -> SquadMess
     }
 }
 
+static NPC_MESSAGE_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 #[inline(always)]
 pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInfo {
     let character_name =
         unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
-    let text = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
+    let timestamp: chrono::DateTime<FixedOffset> = Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap());
+    let message_id = NPC_MESSAGE_ID_COUNTER.fetch_add(1, Ordering::Relaxed) as u32;
+    let message = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
 
     NpcMessageInfo {
-        // temporary for work with blish-hud
-        channel_id: 9999,
-        channel_type: ChannelType::Squad,
-        subgroup: 255,
-        is_broadcast: false,
-        timestamp: Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap()),
-        account_name: "",
-
         character_name,
-        text,
+        timestamp,
+        message_id,
+        message,
     }
 }
 

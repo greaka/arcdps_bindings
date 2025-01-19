@@ -191,21 +191,23 @@ pub struct SquadMessageInfo<'a> {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NpcMessageInfo<'a> {
-    // temporary for work with blish-hud
-    pub channel_id: u32,
-    pub channel_type: ChannelType,
-    pub subgroup: u8,
-    pub is_broadcast: bool,
-    pub timestamp: DateTime<FixedOffset>,
-    pub account_name: &'a str,
-
-    /// Null terminated character name of the player that sent the message. The
+    /// Null terminated character name of the character that sent the message. The
     /// string is only valid for the duration of the call.
     pub character_name: &'a str,
 
+    /// A DateTime denoting when this message was received by the server. This
+    /// is the "absolute ordering" for chat messages, however the time can
+    /// potentially differ several seconds between the client and server because
+    /// of latency and clock skew.
+    pub timestamp: DateTime<FixedOffset>,
+
+    /// A unique identifier for the message. Can be used to, for example, 
+    /// sort messages that arrived at the same time.
+    pub message_id: u32,
+
     /// Null terminated string containing the content of the message that was
     /// sent. The string is only valid for the duration of the call.
-    pub text: &'a str, // TODO: maybe rename it as raw?
+    pub message: &'a str,
 }
 
 #[repr(C)]
