@@ -190,23 +190,17 @@ pub struct SquadMessageInfo<'a> {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct NpcMessageInfo<'a> {
-    /// Null terminated character name of the character that sent the message. The
-    /// string is only valid for the duration of the call.
+    /// Null terminated character name of the NPC or the player character.
+    /// The string is only valid for the duration of the call.
     pub character_name: &'a str,
 
-    /// A DateTime denoting when this message was received by the server. This
-    /// is the "absolute ordering" for chat messages, however the time can
-    /// potentially differ several seconds between the client and server because
-    /// of latency and clock skew.
-    pub timestamp: DateTime<FixedOffset>,
-
-    /// A unique identifier for the message. Can be used to, for example, 
-    /// sort messages that arrived at the same time.
-    pub message_id: u64,
-
-    /// Null terminated string containing the content of the message that was
-    /// sent. The string is only valid for the duration of the call.
+    /// Null terminated string of the message said by an npc or the user character.
+    /// The string is only valid for the duration of the call.
     pub message: &'a str,
+
+    /// Time since epoch in nanoseconds.
+    /// This can be used to sort messages, when they are out of order.
+    pub timestamp: u64,
 }
 
 #[repr(C)]
@@ -268,6 +262,10 @@ pub struct RawNpcMessageInfo {
     /// The string is only valid for the duration of the call.
     pub message: *const u8,
     pub message_length: u64,
+
+    /// Time since epoch in nanoseconds.
+    /// This can be used to sort messages, when they are out of order.
+    pub timestamp: u64,
 }
 
 #[repr(C)]

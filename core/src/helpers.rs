@@ -1,7 +1,5 @@
 #![allow(clippy::missing_safety_doc)]
 use std::ffi::CStr;
-use chrono::{FixedOffset, Utc};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::*;
 
 /// A helper function to convert raw arguments to safe abstractions
@@ -85,21 +83,17 @@ pub fn convert_extras_squad_chat_message(msg: &RawSquadMessageInfo) -> SquadMess
     }
 }
 
-static NPC_MESSAGE_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
-
 #[inline(always)]
 pub fn convert_extras_npc_chat_message(msg: &RawNpcMessageInfo) -> NpcMessageInfo {
     let character_name =
         unsafe { get_str_from_ptr_and_len(msg.character_name, msg.character_name_length) };
-    let timestamp = Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap());
-    let message_id = NPC_MESSAGE_ID_COUNTER.fetch_add(1, Ordering::Relaxed) as u64;
     let message = unsafe { get_str_from_ptr_and_len(msg.message, msg.message_length) };
+    let timestamp = msg.timestamp;
 
     NpcMessageInfo {
         character_name,
-        timestamp,
-        message_id,
         message,
+        timestamp
     }
 }
 
