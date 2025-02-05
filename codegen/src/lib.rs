@@ -98,17 +98,18 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         // export -- arcdps looks for this exported function and calls the address it returns on client load
         // if you need any of the ignored values, create an issue with your use case
         pub unsafe extern "system" fn get_init_addr(
-            __arc_version: PCCHAR,
+            __arc_version: *mut c_char,
             __imguictx: *mut imgui::sys::ImGuiContext,
-            __id3dptr: LPVOID,
-            __arc_dll: HANDLE,
+            __id3dptr: *mut c_void,
+            __arc_dll: *mut c_void,
             __mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             __freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
-        ) -> fn() -> &'static ArcDpsExport {
+        ) -> unsafe extern "system" fn() -> *const ArcDpsExport {
             imgui::sys::igSetCurrentContext(__imguictx);
             imgui::sys::igSetAllocatorFunctions(__mallocfn, __freefn, ::core::ptr::null_mut());
             __CTX = Some(imgui::Context::current());
-            __UI = Some(imgui::Ui::from_ctx(__CTX.as_ref().unwrap()));
+            let __ctx = &raw const __CTX;
+            __UI = Some(imgui::Ui::from_ctx((*__ctx).as_ref().unwrap()));
             __SWAPCHAIN = NonNull::new(__id3dptr);
             ::arcdps::__init(__arc_version, __arc_dll, #name);
             __load
@@ -124,13 +125,13 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         // export -- arcdps looks for this exported function and calls the address it returns on client load
         // if you need any of the ignored values, create an issue with your use case
         pub unsafe extern "system" fn get_init_addr(
-            __arc_version: PCCHAR,
+            __arc_version: *mut c_char,
             _imguictx: *mut c_void,
-            __id3dptr: LPVOID,
-            __arc_dll: HANDLE,
+            __id3dptr: *mut c_void,
+            __arc_dll: *mut c_void,
             _mallocfn: Option<unsafe extern "C" fn(sz: usize, user_data: *mut c_void) -> *mut c_void>,
             _freefn: Option<unsafe extern "C" fn(ptr: *mut c_void, user_data: *mut c_void)>,
-        ) -> fn() -> &'static ArcDpsExport {
+        ) -> unsafe extern "system" fn() -> *const ArcDpsExport {
             __SWAPCHAIN = NonNull::new(__id3dptr);
             ::arcdps::__init(__arc_version, __arc_dll, #name);
             __load
@@ -142,17 +143,8 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             use super::*;
             use ::std::os::raw::{c_char, c_void};
             use ::std::ptr::NonNull;
-            use ::arcdps::helpers;
             use ::arcdps::ArcDpsExport;
             use ::arcdps::{InitFunc, ReleaseFunc};
-
-            type LPARAM = isize;
-            type LPVOID = *mut c_void;
-            type UINT = u32;
-            type WPARAM = usize;
-            type PCCHAR = *mut c_char;
-            type HWND = *mut c_void;
-            type HANDLE = *mut c_void;
 
             #abstract_combat
             #abstract_combat_local
@@ -184,21 +176,21 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             static mut __ERROR_STRING: String = String::new();
             static mut __SWAPCHAIN: Option<NonNull<c_void>> = None;
 
-            fn __load() -> &'static ArcDpsExport {
-                let mut __export = &__EXPORT;
+            unsafe extern "system" fn __load() -> *const ArcDpsExport {
+                let mut __export = &raw const __EXPORT;
                 let __res: Result<(), Box<dyn ::std::error::Error>> = #init;
                 if let Err(__e) = __res {
                     unsafe {
                         __ERROR_STRING = __e.to_string() + "\0";
-                        __EXPORT_ERROR.size = __ERROR_STRING.as_ptr() as _;
-                        __export = &__EXPORT_ERROR;
+                        __EXPORT_ERROR.size = &raw const __ERROR_STRING as _;
+                        __export = &raw const __EXPORT_ERROR;
                     }
                 }
 
                 __export
             }
 
-            fn __unload() {
+            unsafe extern "system" fn __unload() {
                 #release
             }
 
@@ -206,8 +198,8 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
             #[no_mangle]
             /* export -- arcdps looks for this exported function and calls the address it returns on client exit */
-            pub extern "system" fn get_release_addr() -> LPVOID {
-                __unload as LPVOID
+            pub extern "system" fn get_release_addr() -> unsafe extern "system" fn() {
+                __unload
             }
         }
     };
@@ -411,9 +403,9 @@ fn build_wnd(
         (_, Some(safe)) => {
             let span = syn::Error::new_spanned(&safe, "").span();
             abstract_wnd_filter = quote_spanned!(span =>
-            unsafe extern "C" fn #func_name (_h_wnd: HWND, __u_msg: UINT,
-                    __w_param: WPARAM, __l_param: LPARAM
-                ) -> UINT {
+            unsafe extern "C" fn #func_name (_h_wnd: *mut c_void, __u_msg: u32,
+                    __w_param: usize, __l_param: isize
+                ) -> u32 {
                 let _ = #safe as ::arcdps::WndProcCallback;
                 use ::arcdps::{WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP};
                 match __u_msg {
@@ -451,9 +443,10 @@ fn build_options_windows(
         (_, Some(safe)) => {
             let span = syn::Error::new_spanned(&safe, "").span();
             abstract_options_windows = quote_spanned!(span =>
-            unsafe extern "C" fn __abstract_options_windows(__window_name: PCCHAR) -> bool {
+            unsafe extern "C" fn __abstract_options_windows(__window_name: *mut c_char) -> bool {
                 let _ = #safe as ::arcdps::OptionsWindowsCallback;
-                let __ui = (&*&raw const __UI).as_ref().unwrap();
+                let __ui = &raw const __UI;
+                let __ui = (*__ui).as_ref().unwrap();
                 #safe(__ui, ::arcdps::helpers::get_str_from_pc_char(__window_name))
             });
             quote_spanned!(span => Some(__arcdps_gen_export::__abstract_options_windows as _) )
@@ -478,7 +471,8 @@ fn build_options_end(
             abstract_options_end = quote_spanned!(span =>
             unsafe extern "C" fn __abstract_options_end() {
                 let _ = #safe as ::arcdps::OptionsCallback;
-                let __ui = (&*&raw const __UI).as_ref().unwrap();
+                let __ui = &raw const __UI;
+                let __ui = (*__ui).as_ref().unwrap();
                 #safe(__ui)
             });
             quote_spanned!(span => Some(__arcdps_gen_export::__abstract_options_end as _) )
@@ -500,7 +494,8 @@ fn build_imgui(raw_imgui: Option<Expr>, imgui: Option<Expr>) -> (TokenStream, To
             abstract_imgui = quote_spanned!(span =>
             unsafe extern "C" fn __abstract_imgui(__loading: u32) {
                 let _ = #safe as ::arcdps::ImguiCallback;
-                let __ui = (&*&raw const __UI).as_ref().unwrap();
+                let __ui = &raw const __UI;
+                let __ui = (*__ui).as_ref().unwrap();
                 #safe(__ui, __loading != 0)
             });
             quote_spanned!(span => Some(__arcdps_gen_export::__abstract_imgui as _) )
@@ -539,7 +534,7 @@ fn build_cbt(
                     __ev: Option<&::arcdps::CombatEvent>,
                     __src: Option<&::arcdps::RawAgent>,
                     __dst: Option<&::arcdps::RawAgent>,
-                    __skill_name: PCCHAR,
+                    __skill_name: *mut c_char,
                     __id: u64,
                     __revision: u64,
                 ) {
