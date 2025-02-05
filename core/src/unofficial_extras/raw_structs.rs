@@ -1,6 +1,6 @@
 // Generated against hash 83db782 of unofficial_extras_releases
 
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, Utc};
 
 use crate::{raw_structs::HMODULE, unofficial_extras::raw_structs_keybinds};
 
@@ -118,11 +118,6 @@ pub struct RawUserInfo {
     /// that the ready check finished successfully (after which there will
     /// be events sent for each user where their `ready_status == false`)
     pub ready_status: bool,
-
-    /// padding
-    pub _unused1: u8,
-    /// padding
-    pub _unused2: u32,
 }
 
 #[repr(i32)]
@@ -139,6 +134,7 @@ pub enum Language {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[non_exhaustive]
 pub enum ChannelType {
     Party     = 0,
     Squad     = 1,
@@ -169,9 +165,9 @@ pub struct SquadMessageInfo<'a> {
     /// A DateTime denoting when this message was received by the server. This
     /// is the "absolute ordering" for chat messages, however the time can
     /// potentially differ several seconds between the client and server because
-    /// of latency and clock skew. The string is only valid for the duration of
-    /// the call.
-    pub timestamp: DateTime<FixedOffset>,
+    /// of latency and clock skew.
+    // timezone taken from ue code
+    pub timestamp: DateTime<Utc>,
 
     /// Null terminated account name of the player that sent the message,
     /// including leading ':'. The string is only valid for the duration of the
@@ -194,13 +190,14 @@ pub struct NpcMessageInfo<'a> {
     /// The string is only valid for the duration of the call.
     pub character_name: &'a str,
 
-    /// Null terminated string of the message said by an npc or the user character.
-    /// The string is only valid for the duration of the call.
+    /// Null terminated string of the message said by an npc or the user
+    /// character. The string is only valid for the duration of the call.
     pub message: &'a str,
 
     /// Time since epoch in nanoseconds.
     /// This can be used to sort messages, when they are out of order.
-    pub timestamp: u64,
+    // timezone taken from ue code
+    pub timestamp: DateTime<Utc>,
 }
 
 #[repr(C)]
@@ -224,30 +221,32 @@ pub struct RawSquadMessageInfo {
     /// may be used in a later version and MUST NOT be interpreted
     pub is_broadcast: u8,
 
-    pub _unused1: u8,
-
     /// Null terminated iso8601 formatted string denoting when this message was
     /// received by the server, e.g. "2022-07-09T11:45:24.888Z". This is the
     /// "absolute ordering" for chat messages, however the time can potentially
     /// differ several seconds between the client and server because of latency
     /// and clock skew. The string is only valid for the duration of the call.
     pub timestamp: *const u8,
+    /// does not include the null byte
     pub timestamp_length: u64,
 
     /// Null terminated account name of the player that sent the message,
     /// including leading ':'. The string is only valid for the duration of the
     /// call.
     pub account_name: *const u8,
+    /// does not include the null byte
     pub account_name_length: u64,
 
     /// Null terminated character name of the player that sent the message. The
     /// string is only valid for the duration of the call.
     pub character_name: *const u8,
+    /// does not include the null byte
     pub character_name_length: u64,
 
     /// Null terminated string containing the content of the message that was
     /// sent. The string is only valid for the duration of the call.
     pub text: *const u8,
+    /// does not include the null byte
     pub text_length: u64,
 }
 
@@ -256,11 +255,13 @@ pub struct RawNpcMessageInfo {
     /// Null terminated character name of the NPC or the player character.
     /// The string is only valid for the duration of the call.
     pub character_name: *const u8,
+    /// does not include the null byte
     pub character_name_length: u64,
 
-    /// Null terminated string of the message said by an npc or the user character.
-    /// The string is only valid for the duration of the call.
+    /// Null terminated string of the message said by an npc or the user
+    /// character. The string is only valid for the duration of the call.
     pub message: *const u8,
+    /// does not include the null byte
     pub message_length: u64,
 
     /// Time since epoch in nanoseconds.
@@ -298,19 +299,20 @@ pub struct RawExtrasAddonInfo {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[non_exhaustive]
 pub enum ChatMessageType {
-    // Called for party/squad messages. 
+    // Called for party/squad messages.
     Squad = 0,
     // Called for NPC Channel (selectable in ingame-chat as "NPC")
-    NPC = 1
+    NPC   = 1,
 }
 
-#[repr(C)]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub struct ChatMessageInfo2<'a> {
-    pub squad_message_info: Option<SquadMessageInfo<'a>>,
-    pub npc_message_info: Option<NpcMessageInfo<'a>>,
+#[non_exhaustive]
+pub enum ChatMessageInfo2<'a> {
+    Squad(SquadMessageInfo<'a>),
+    Npc(NpcMessageInfo<'a>),
 }
 
 #[repr(C)]
@@ -324,7 +326,8 @@ pub type RawLanguageChangedCallbackSignature = unsafe extern "C" fn(Language);
 pub type RawKeyBindChangedCallbackSignature =
     unsafe extern "C" fn(raw_structs_keybinds::KeyBindChanged);
 pub type RawChatMessageCallbackSignature = unsafe extern "C" fn(*const RawSquadMessageInfo);
-pub type RawChatMessage2CallbackSignature = unsafe extern "C" fn(ChatMessageType, RawChatMessageInfo2);
+pub type RawChatMessage2CallbackSignature =
+    unsafe extern "C" fn(ChatMessageType, RawChatMessageInfo2);
 
 #[repr(C)]
 pub struct RawExtrasSubscriberInfoHeader {
@@ -335,23 +338,40 @@ pub struct RawExtrasSubscriberInfoHeader {
     pub _unused1: u32,
 }
 
-use std::{iter::Map, slice::Iter};
+use std::{
+    iter::Map,
+    ops::{Deref, DerefMut},
+    slice::Iter,
+};
+
 pub type ExtrasSquadUpdateCallback = fn(UserInfoIter);
 pub type ExtrasChatMessageCallback = fn(&SquadMessageInfo);
-pub type ExtrasChatMessage2Callback = fn(ChatMessageType, ChatMessageInfo2);
+pub type ExtrasChatMessage2Callback = fn(ChatMessageInfo2);
 pub type UserInfoIter<'a> = Map<Iter<'a, RawUserInfo>, UserConvert>;
-pub type UserConvert = for<'r> fn(&'r RawUserInfo) -> UserInfo;
+pub type UserConvert = for<'r> fn(&'r RawUserInfo) -> UserInfo<'r>;
 
 #[repr(C)]
-pub struct RawExtrasSubscriberInfoV1 {
-    // TODO: Is there a way to do inheritance in rust, or does the header need
-    // to be copied into every struct version?
-    /// The version of the following info struct
-    /// This has to be set to the version you want to use.
-    pub info_version: u32,
+pub struct RawExtrasSubscriberInfo<T> {
+    pub header: RawExtrasSubscriberInfoHeader,
+    pub content: T,
+}
 
-    pub _unused1: u32,
+impl<T> Deref for RawExtrasSubscriberInfo<T> {
+    type Target = T;
 
+    fn deref(&self) -> &Self::Target {
+        &self.content
+    }
+}
+
+impl<T> DerefMut for RawExtrasSubscriberInfo<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.content
+    }
+}
+
+#[repr(C)]
+pub struct InfoV1 {
     /// Name of the addon subscribing to the changes. Must be valid for the
     /// lifetime of the subcribing addon. Set to `nullptr` if initialization
     /// fails
@@ -380,86 +400,49 @@ pub struct RawExtrasSubscriberInfoV1 {
 }
 
 #[repr(C)]
-pub struct RawExtrasSubscriberInfoV2 {
-    // TODO: Is there a way to do inheritance in rust, or does the header need
-    // to be copied into every struct version?
-    /// The version of the following info struct
-    /// This has to be set to the version you want to use.
-    pub info_version: u32,
-
-    pub _unused1: u32,
-
-    /// Name of the addon subscribing to the changes. Must be valid for the
-    /// lifetime of the subcribing addon. Set to `nullptr` if initialization
-    /// fails
-    pub subscriber_name: *const u8,
-
-    /// Called whenever anything in the squad changes. Only the users that
-    /// changed are sent. If a user is removed from the squad, it will be
-    /// sent with [`RawUserInfo::role`]` == `[`UserRole::None`]
-    pub squad_update_callback: Option<RawSquadUpdateCallbackSignature>,
-
-    /// Called whenever the language is changed. Either by Changing it in the UI
-    /// or by pressing the Right Ctrl (default) key. Will also be called
-    /// directly after initialization, with the current language, to get the
-    /// startup language.
-    pub language_changed_callback: Option<RawLanguageChangedCallbackSignature>,
-
-    /// Called whenever a KeyBind is changed.
-    /// By changing it in the ingame UI, by pressing the translation shortcut or
-    /// with the Presets feature of this plugin. It is called for every keyBind
-    /// separately.
-    ///
-    /// After initialization this is called for every current keybind that
-    /// exists. If you want to get a single keybind, at any time you want, call
-    /// the exported function.
-    pub key_bind_changed_callback: Option<RawKeyBindChangedCallbackSignature>,
+pub struct InfoV2 {
+    /// contains fields from v1
+    pub v1: InfoV1,
 
     /// Called whenever a chat message is sent in your party/squad
     pub chat_message_callback: Option<RawChatMessageCallbackSignature>,
 }
 
+impl Deref for InfoV2 {
+    type Target = InfoV1;
+
+    fn deref(&self) -> &Self::Target {
+        &self.v1
+    }
+}
+
+impl DerefMut for InfoV2 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.v1
+    }
+}
+
 #[repr(C)]
-pub struct RawExtrasSubscriberInfoV3 {
-    // TODO: Is there a way to do inheritance in rust, or does the header need
-    // to be copied into every struct version?
-    /// The version of the following info struct
-    /// This has to be set to the version you want to use.
-    pub info_version: u32,
+pub struct InfoV3 {
+    /// contains fields from v2
+    pub v2: InfoV2,
 
-    pub _unused1: u32,
-
-    /// Name of the addon subscribing to the changes. Must be valid for the
-    /// lifetime of the subcribing addon. Set to `nullptr` if initialization
-    /// fails
-    pub subscriber_name: *const u8,
-
-    /// Called whenever anything in the squad changes. Only the users that
-    /// changed are sent. If a user is removed from the squad, it will be
-    /// sent with [`RawUserInfo::role`]` == `[`UserRole::None`]
-    pub squad_update_callback: Option<RawSquadUpdateCallbackSignature>,
-
-    /// Called whenever the language is changed. Either by Changing it in the UI
-    /// or by pressing the Right Ctrl (default) key. Will also be called
-    /// directly after initialization, with the current language, to get the
-    /// startup language.
-    pub language_changed_callback: Option<RawLanguageChangedCallbackSignature>,
-
-    /// Called whenever a KeyBind is changed.
-    /// By changing it in the ingame UI, by pressing the translation shortcut or
-    /// with the Presets feature of this plugin. It is called for every keyBind
-    /// separately.
-    ///
-    /// After initialization this is called for every current keybind that
-    /// exists. If you want to get a single keybind, at any time you want, call
-    /// the exported function.
-    pub key_bind_changed_callback: Option<RawKeyBindChangedCallbackSignature>,
-
-    /// Called whenever a chat message is sent in your party/squad
-    pub chat_message_callback: Option<RawChatMessageCallbackSignature>,
-    
     /// Called on different chat messages.
     pub chat_message_callback2: Option<RawChatMessage2CallbackSignature>,
+}
+
+impl Deref for InfoV3 {
+    type Target = InfoV2;
+
+    fn deref(&self) -> &Self::Target {
+        &self.v2
+    }
+}
+
+impl DerefMut for InfoV3 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.v2
+    }
 }
 
 /// This function must be exported by subscriber addons as

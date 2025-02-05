@@ -16,7 +16,6 @@ pub use raw_structs::*;
 pub use unofficial_extras::raw_structs::*;
 
 #[doc(hidden)]
-#[inline(always)]
 pub unsafe fn __init(arc_version: PCCHAR, arcdps: HANDLE, #[allow(unused)] name: &'static str) {
     __set_handle(arcdps);
     ARC_VERSION = helpers::get_str_from_pc_char(arc_version);

@@ -1,6 +1,6 @@
 [package]
 name = "arcdps_codegen"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["greaka <crates@greaka.de>"]
 edition = "2021"
 description = "Macros for arcdps"
@@ -14,10 +14,10 @@ proc-macro = true
 imgui = []
 
 [dependencies]
-quote = "1.0.21"
-proc-macro2 = "1.0.43"
-paste = "1.0.8"
+quote = "1.0.38"
+proc-macro2 = "1.0.93"
+paste = "1.0.15"
 
 [dependencies.syn]
-version = "1.0.99"
+version = "1.0.109"
 features = ["full"]

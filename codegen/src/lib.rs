@@ -317,36 +317,38 @@ fn build_extras_init(
             return;
         }
 
-        if addon.max_info_version == 1 {
-            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
-            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV1);
+        fn fill_v1(sub: *mut ::arcdps::RawExtrasSubscriberInfo<::arcdps::InfoV1>) {
+            let sub = unsafe { &mut *sub };
+            sub.header.info_version = 1;
 
-            sub.info_version = 1;
             sub.subscriber_name = #name.as_ptr();
             sub.squad_update_callback = #squad_cb;
             sub.language_changed_callback = None;
             sub.key_bind_changed_callback = None;
-        } else if addon.max_info_version == 2 {
-            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
-            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV2);
+        }
 
-            sub.info_version = 2;
-            sub.subscriber_name = #name.as_ptr();
-            sub.squad_update_callback = #squad_cb;
-            sub.language_changed_callback = None;
-            sub.key_bind_changed_callback = None;
+        fn fill_v2(sub: *mut ::arcdps::RawExtrasSubscriberInfo<::arcdps::InfoV2>) {
+            fill_v1(sub.cast());
+
+            let sub = unsafe { &mut *sub };
+            sub.header.info_version = 2;
+
             sub.chat_message_callback = #chat_cb;
-        } else {
-            let sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader = sub;
-            let sub = &mut *(sub as *mut ::arcdps::RawExtrasSubscriberInfoV3);
+        }
 
-            sub.info_version = 3;
-            sub.subscriber_name = #name.as_ptr();
-            sub.squad_update_callback = #squad_cb;
-            sub.language_changed_callback = None;
-            sub.key_bind_changed_callback = None;
-            sub.chat_message_callback = #chat_cb;
+        fn fill_v3(sub: *mut ::arcdps::RawExtrasSubscriberInfo<::arcdps::InfoV3>) {
+            fill_v2(sub.cast());
+
+            let sub = unsafe { &mut *sub };
+            sub.header.info_version = 3;
+
             sub.chat_message_callback2 = #chat_cb2;
+        }
+
+        match addon.max_info_version {
+            1 => fill_v1(sub.cast()),
+            2 => fill_v2(sub.cast()),
+            _ => fill_v3(sub.cast()),
         }
     );
 
@@ -379,7 +381,7 @@ fn build_extras_init(
     quote_spanned!(abstract_wrapper.span() =>
         #[no_mangle]
         unsafe extern "system" fn arcdps_unofficial_extras_subscriber_init(
-            addon: &::arcdps::RawExtrasAddonInfo, sub: &mut ::arcdps::RawExtrasSubscriberInfoHeader) {
+            addon: &::arcdps::RawExtrasAddonInfo, sub: *mut ::arcdps::RawExtrasSubscriberInfoHeader) {
 
             #abstract_wrapper
         }
@@ -450,7 +452,7 @@ fn build_options_windows(
             abstract_options_windows = quote_spanned!(span =>
             unsafe extern "C" fn abstract_options_windows(window_name: PCCHAR) -> bool {
                 let _ = #safe as ::arcdps::OptionsWindowsCallback;
-                let ui = UI.as_ref().unwrap();
+                let ui = (&*&raw const UI).as_ref().unwrap();
                 #safe(ui, helpers::get_str_from_pc_char(window_name))
             });
             quote_spanned!(span => Some(__arcdps_gen_export::abstract_options_windows as _) )
@@ -475,7 +477,7 @@ fn build_options_end(
             abstract_options_end = quote_spanned!(span =>
             unsafe extern "C" fn abstract_options_end() {
                 let _ = #safe as ::arcdps::OptionsCallback;
-                let ui = UI.as_ref().unwrap();
+                let ui = (&*&raw const UI).as_ref().unwrap();
                 #safe(ui)
             });
             quote_spanned!(span => Some(__arcdps_gen_export::abstract_options_end as _) )
@@ -497,7 +499,7 @@ fn build_imgui(raw_imgui: Option<Expr>, imgui: Option<Expr>) -> (TokenStream, To
             abstract_imgui = quote_spanned!(span =>
             unsafe extern "C" fn abstract_imgui(loading: u32) {
                 let _ = #safe as ::arcdps::ImguiCallback;
-                let ui = UI.as_ref().unwrap();
+                let ui = (&*&raw const UI).as_ref().unwrap();
                 #safe(ui, loading != 0)
             });
             quote_spanned!(span => Some(__arcdps_gen_export::abstract_imgui as _) )

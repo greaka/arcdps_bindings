@@ -65,7 +65,7 @@ pub(crate) struct ArcDpsGen {
     pub unofficial_extras_init: Option<Expr>,
     pub unofficial_extras_squad_update: Option<Expr>,
     pub unofficial_extras_chat_message: Option<Expr>,
-    pub unofficial_extras_chat_message2: Option<Expr>
+    pub unofficial_extras_chat_message2: Option<Expr>,
 }
 
 impl syn::parse::Parse for ArcDpsGen {

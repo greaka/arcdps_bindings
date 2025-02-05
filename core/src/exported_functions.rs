@@ -20,41 +20,41 @@ unsafe fn get_func(e: &str) -> *mut c_void {
 
 static mut E0: Option<Export0> = None;
 pub unsafe fn e0() -> *mut u16 {
-    E0.get_or_insert_with(|| transmute(get_func("e0")))()
+    (&mut *&raw mut E0).get_or_insert_with(|| transmute(get_func("e0")))()
 }
 
 static mut E3: Option<Export3> = None;
 pub unsafe fn e3(s: *mut u8) {
-    E3.get_or_insert_with(|| transmute(get_func("e3")))(s)
+    (&mut *&raw mut E3).get_or_insert_with(|| transmute(get_func("e3")))(s)
 }
 
 static mut E5: Option<Export5> = None;
 #[cfg(feature = "imgui")]
 pub unsafe fn e5(out: *mut [*mut imgui::sys::ImVec4; 5]) {
-    E5.get_or_insert_with(|| transmute(get_func("e5")))(out)
+    (&mut *&raw mut E5).get_or_insert_with(|| transmute(get_func("e5")))(out)
 }
 
 #[cfg(not(feature = "imgui"))]
 pub unsafe fn e5(out: *mut [*mut [f32; 4]; 5]) {
-    E5.get_or_insert_with(|| transmute(get_func("e5")))(out)
+    (&mut *&raw mut E5).get_or_insert_with(|| transmute(get_func("e5")))(out)
 }
 
 static mut E6: Option<Export6> = None;
 pub unsafe fn e6() -> u64 {
-    E6.get_or_insert_with(|| transmute(get_func("e6")))()
+    (&mut *&raw mut E6).get_or_insert_with(|| transmute(get_func("e6")))()
 }
 
 static mut E7: Option<Export7> = None;
 pub unsafe fn e7() -> u64 {
-    E7.get_or_insert_with(|| transmute(get_func("e7")))()
+    (&mut *&raw mut E7).get_or_insert_with(|| transmute(get_func("e7")))()
 }
 
 static mut E8: Option<Export8> = None;
 pub unsafe fn e8(s: *mut u8) {
-    E8.get_or_insert_with(|| transmute(get_func("e8")))(s)
+    (&mut *&raw mut E8).get_or_insert_with(|| transmute(get_func("e8")))(s)
 }
 
 static mut E9: Option<Export9> = None;
 pub unsafe fn e9(ev: &CombatEvent, sig: u32) {
-    E9.get_or_insert_with(|| transmute(get_func("e9")))(ev, sig)
+    (&mut *&raw mut E9).get_or_insert_with(|| transmute(get_func("e9")))(ev, sig)
 }
