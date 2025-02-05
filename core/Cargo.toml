@@ -1,6 +1,6 @@
 [package]
 name = "arcdps"
-version = "0.11.0"
+version = "0.11.1"
 authors = ["Greaka <crates@greaka.de>"]
 edition = "2021"
 description = "Rust bindings for the Guild Wars 2 dps-meter with focus on ease-of-use and performance."

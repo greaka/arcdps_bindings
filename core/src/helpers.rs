@@ -100,14 +100,12 @@ pub fn convert_extras_chat_message2<'a>(
     unsafe {
         match msg_type {
             ChatMessageType::Squad => {
-                let raw_squad_msg = msg.squad_message_info;
-                let squad_info = &*raw_squad_msg;
+                let squad_info = &*msg.squad_message_info;
                 let info = convert_extras_squad_chat_message(squad_info);
                 ChatMessageInfo2::Squad(info)
             }
             ChatMessageType::NPC => {
-                let raw_npc_msg = msg.npc_message_info;
-                let npc_info = &*raw_npc_msg;
+                let npc_info = &*msg.npc_message_info;
                 let info = convert_extras_npc_chat_message(npc_info);
                 ChatMessageInfo2::Npc(info)
             }

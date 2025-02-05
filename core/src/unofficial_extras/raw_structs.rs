@@ -121,7 +121,7 @@ pub struct RawUserInfo {
 }
 
 #[repr(i32)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Language {
     English = 0,
@@ -297,7 +297,7 @@ pub struct RawExtrasAddonInfo {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[non_exhaustive]
 pub enum ChatMessageType {
@@ -346,7 +346,7 @@ use std::{
 
 pub type ExtrasSquadUpdateCallback = fn(UserInfoIter);
 pub type ExtrasChatMessageCallback = fn(&SquadMessageInfo);
-pub type ExtrasChatMessage2Callback = fn(ChatMessageInfo2);
+pub type ExtrasChatMessage2Callback = fn(&ChatMessageInfo2);
 pub type UserInfoIter<'a> = Map<Iter<'a, RawUserInfo>, UserConvert>;
 pub type UserConvert = for<'r> fn(&'r RawUserInfo) -> UserInfo<'r>;
 
