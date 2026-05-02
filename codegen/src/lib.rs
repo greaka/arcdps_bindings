@@ -42,7 +42,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
         ArcDpsExport {
             size: ::std::mem::size_of::<ArcDpsExport>(),
             sig: #sig,
-            imgui_version: 18000,
+            imgui_version: 19270,
             out_build: #build.as_ptr(),
             out_name: #out_name.as_ptr(),
             combat: #cb_combat,
@@ -162,7 +162,7 @@ pub fn arcdps_export(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
             static mut __EXPORT_ERROR: ArcDpsExport = ArcDpsExport {
                     size: 0,
                     sig: 0,
-                    imgui_version: 18000,
+                    imgui_version: 19270,
                     out_build: #build.as_ptr(),
                     out_name: #out_name.as_ptr(),
                     combat: None,
